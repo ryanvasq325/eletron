@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Projeto Electron - Provocação Histórica</title>
+    <title>Projeto Electron - Provocação Final</title>
     <style>
         body {
             display: flex;
@@ -15,12 +15,10 @@
             background-color: #1a1a1a;
             color: white;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
         }
 
-        .container {
-            text-align: center;
-            position: relative; 
-        }
+        .container { text-align: center; position: relative; }
 
         #palmeiras-symbol {
             cursor: pointer;
@@ -28,14 +26,9 @@
             transition: transform 0.3s ease;
         }
 
-        #palmeiras-symbol:hover {
-            transform: scale(1.1);
-        }
+        #palmeiras-symbol:hover { transform: scale(1.1); }
 
-        .image-wrapper {
-            position: relative;
-            display: inline-block;
-        }
+        .image-wrapper { position: relative; display: inline-block; }
 
         #flamengo-image {
             display: none;
@@ -43,37 +36,74 @@
             max-width: 90%;
             border-radius: 10px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            animation: fadeIn 0.8s ease-in-out;
         }
 
         /* Estilo da Seta */
-        #btn-proximo {
-            display: none; /* Começa escondida */
+        .btn-acao {
+            display: none;
             position: absolute;
-            right: -60px;
+            right: -70px;
             top: 50%;
             transform: translateY(-50%);
             background: #c90c0f;
             color: white;
             border: none;
             border-radius: 50%;
-            width: 50px;
-            height: 50px;
+            width: 60px;
+            height: 60px;
             font-size: 24px;
             cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            transition: background 0.3s, transform 0.2s;
+            transition: 0.3s;
         }
 
-        #btn-proximo:hover {
-            background: #ff0000;
-            transform: translateY(-50%) scale(1.1);
+        .btn-acao:hover { background: #ff0000; transform: translateY(-50%) scale(1.1); }
+
+        /* Estilo da Calculadora */
+        #calculadora {
+            display: none;
+            background: #333;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #555;
+            margin-top: 20px;
+            animation: fadeIn 0.5s;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .calc-visor {
+            background: #222;
+            padding: 15px;
+            font-size: 2rem;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            color: #0f0;
+            font-family: monospace;
         }
+
+        .btn-calc {
+            width: 60px;
+            height: 60px;
+            font-size: 1.5rem;
+            margin: 5px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background: #444;
+            color: white;
+        }
+
+        .btn-calc:hover { background: #666; }
+
+        #resultado-final {
+            display: none;
+            color: #ffcc00;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-top: 20px;
+            animation: bounce 0.5s infinite alternate;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes bounce { from { transform: scale(1); } to { transform: scale(1.05); } }
 
         h2 { margin-bottom: 20px; font-weight: 300; }
     </style>
@@ -84,42 +114,72 @@
         <h2 id="titulo">Clique no escudo para a verdade:</h2>
         
         <img id="palmeiras-symbol" 
-             src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Palmeiras_logo.svg/960px-Palmeiras_logo.svg.png" 
-             alt="Escudo do Palmeiras">
+             src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Palmeiras_logo.svg/960px-Palmeiras_logo.svg.png">
 
         <div class="image-wrapper">
-            <img id="flamengo-image" src="" alt="Flamengo Campeão">
-            
-            <button id="btn-proximo" title="Próxima imagem">➜</button>
+            <img id="flamengo-image" src="">
+            <button id="btn-proximo" class="btn-acao">➜</button>
+            <button id="btn-ir-calc" class="btn-acao">🧮</button>
         </div>
+
+        <div id="calculadora">
+            <div class="calc-visor">1 + 2 = ?</div>
+            <button class="btn-calc" onclick="errado()">1</button>
+            <button class="btn-calc" onclick="errado()">2</button>
+            <button class="btn-calc" onclick="acertou()">3</button>
+            <button class="btn-calc" onclick="errado()">4</button>
+        </div>
+
+        <div id="resultado-final"></div>
     </div>
 
     <script>
         const escudo = document.getElementById('palmeiras-symbol');
         const imagemFlamengo = document.getElementById('flamengo-image');
         const btnProximo = document.getElementById('btn-proximo');
+        const btnIrCalc = document.getElementById('btn-ir-calc');
+        const calculadora = document.getElementById('calculadora');
         const titulo = document.getElementById('titulo');
+        const resultadoFinal = document.getElementById('resultado-final');
 
-        const urlImagem1 = "https://lncimg.lance.com.br/cdn-cgi/image/width=950,quality=75,fit=pad,format=webp/uploads/2025/11/Memes-Flamengo-x-Palmeiras-Libertadores-2025-2.png";
-        const urlImagem2 = "https://lncimg.lance.com.br/cdn-cgi/image/width=950,quality=75,fit=pad,format=webp/uploads/2025/11/Memes-Flamengo-x-Palmeiras-Libertadores-2025-3.png";
+        const img1 = "https://lncimg.lance.com.br/cdn-cgi/image/width=950,quality=75,fit=pad,format=webp/uploads/2025/11/Memes-Flamengo-x-Palmeiras-Libertadores-2025-2.png";
+        const img2 = "https://lncimg.lance.com.br/cdn-cgi/image/width=950,quality=75,fit=pad,format=webp/uploads/2025/11/Memes-Flamengo-x-Palmeiras-Libertadores-2025-3.png";
 
-        
+        // 1. Escudo -> Imagem 1
         escudo.addEventListener('click', () => {
             escudo.style.display = 'none';
-            imagemFlamengo.src = urlImagem1;
+            imagemFlamengo.src = img1;
             imagemFlamengo.style.display = 'block';
-            btnProximo.style.display = 'flex'; 
-            btnProximo.style.justifyContent = 'center';
-            btnProximo.style.alignItems = 'center';
+            btnProximo.style.display = 'block';
             titulo.innerText = "51 é pinga!";
         });
 
-      
+        // 2. Seta -> Imagem 2
         btnProximo.addEventListener('click', () => {
-            imagemFlamengo.src = urlImagem2;
-            titulo.innerText = "Chora Palmeiras";
-            btnProximo.style.display = 'none'; 
+            imagemFlamengo.src = img2;
+            btnProximo.style.display = 'none';
+            btnIrCalc.style.display = 'block'; // Mostra botão da calculadora
+            titulo.innerText = "O Rio de Janeiro continua sendo...";
         });
+
+        // 3. Botão Calculadora -> Mostra Calc
+        btnIrCalc.addEventListener('click', () => {
+            imagemFlamengo.style.display = 'none';
+            btnIrCalc.style.display = 'none';
+            calculadora.style.display = 'block';
+            titulo.innerText = "Resolva a conta:";
+        });
+
+        function errado() {
+            alert("Tente novamente!");
+        }
+
+        function acertou() {
+            calculadora.style.display = 'none';
+            titulo.innerText = "MATEMÁTICA EXATA!";
+            resultadoFinal.innerText = "Esse é o total de vices do Palmeiras em 2025! 🥈🥈🥈";
+            resultadoFinal.style.display = 'block';
+        }
     </script>
 </body>
 </html>
