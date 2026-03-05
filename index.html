@@ -2,179 +2,124 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Electron Ultra Fighter</title>
-    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser-arcade-physics.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projeto Electron - Provocação Histórica</title>
     <style>
-        body { margin: 0; background: #050510; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
-        #game-container { border: 2px solid #00fff2; box-shadow: 0 0 40px rgba(0, 255, 242, 0.2); }
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #1a1a1a;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .container {
+            text-align: center;
+            position: relative; 
+        }
+
+        #palmeiras-symbol {
+            cursor: pointer;
+            width: 200px;
+            transition: transform 0.3s ease;
+        }
+
+        #palmeiras-symbol:hover {
+            transform: scale(1.1);
+        }
+
+        .image-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        #flamengo-image {
+            display: none;
+            width: 500px;
+            max-width: 90%;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            animation: fadeIn 0.8s ease-in-out;
+        }
+
+        /* Estilo da Seta */
+        #btn-proximo {
+            display: none; /* Começa escondida */
+            position: absolute;
+            right: -60px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #c90c0f;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: background 0.3s, transform 0.2s;
+        }
+
+        #btn-proximo:hover {
+            background: #ff0000;
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 { margin-bottom: 20px; font-weight: 300; }
     </style>
 </head>
 <body>
-    <div id="game-container"></div>
 
-<script>
-const config = {
-    type: Phaser.AUTO,
-    width: 900,
-    height: 500,
-    parent: 'game-container',
-    physics: { default: 'arcade', arcade: { gravity: { y: 1500 }, debug: false } },
-    scene: { preload: preload, create: create, update: update }
-};
-
-const game = new Phaser.Game(config);
-let p1, p2, cursors, keysP2, p1Bar, p2Bar;
-
-function preload() {
-    // Criando um lutador com anatomia e armadura neon
-    const drawProFighter = (name, color, secondary) => {
-        let canvas = this.textures.createCanvas(name, 80, 120);
-        let ctx = canvas.context;
-
-        // Efeito de brilho externo (Glow)
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = color;
-
-        // Pernas
-        ctx.fillStyle = '#111';
-        ctx.fillRect(25, 80, 12, 40); // L
-        ctx.fillRect(43, 80, 12, 40); // R
+    <div class="container">
+        <h2 id="titulo">Clique no escudo para a verdade:</h2>
         
-        // Tronco (Armadura)
-        let grd = ctx.createLinearGradient(0, 30, 0, 80);
-        grd.addColorStop(0, color);
-        grd.addColorStop(1, '#000');
-        ctx.fillStyle = grd;
-        ctx.fillRect(20, 30, 40, 50);
+        <img id="palmeiras-symbol" 
+             src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Palmeiras_logo.svg/960px-Palmeiras_logo.svg.png" 
+             alt="Escudo do Palmeiras">
 
-        // Ombreiras
-        ctx.fillStyle = secondary;
-        ctx.fillRect(15, 30, 15, 15);
-        ctx.fillRect(50, 30, 15, 15);
+        <div class="image-wrapper">
+            <img id="flamengo-image" src="" alt="Flamengo Campeão">
+            
+            <button id="btn-proximo" title="Próxima imagem">➜</button>
+        </div>
+    </div>
 
-        // Capacete/Cabeça
-        ctx.fillStyle = '#222';
-        ctx.fillRect(28, 5, 24, 25);
-        ctx.fillStyle = color;
-        ctx.fillRect(32, 12, 16, 5); // Visor
+    <script>
+        const escudo = document.getElementById('palmeiras-symbol');
+        const imagemFlamengo = document.getElementById('flamengo-image');
+        const btnProximo = document.getElementById('btn-proximo');
+        const titulo = document.getElementById('titulo');
 
-        canvas.refresh();
-    };
+        const urlImagem1 = "https://lncimg.lance.com.br/cdn-cgi/image/width=950,quality=75,fit=pad,format=webp/uploads/2025/11/Memes-Flamengo-x-Palmeiras-Libertadores-2025-2.png";
+        const urlImagem2 = "https://lncimg.lance.com.br/cdn-cgi/image/width=950,quality=75,fit=pad,format=webp/uploads/2025/11/Memes-Flamengo-x-Palmeiras-Libertadores-2025-3.png";
 
-    drawProFighter('p1_tex', '#00f2ff', '#ffffff');
-    drawProFighter('p2_tex', '#ff0055', '#ffffff');
-}
-
-function create() {
-    // Fundo Estilizado (Grade de Perspectiva)
-    let bg = this.add.graphics();
-    bg.lineStyle(1, 0x00f2ff, 0.1);
-    for(let i=0; i<30; i++) {
-        bg.lineBetween(i*40, 0, i*40, 500);
-        bg.lineBetween(0, i*40, 900, i*40);
-    }
-
-    // Chão de Cristal
-    let ground = this.add.rectangle(450, 480, 900, 40, 0x0a0a15).setStrokeStyle(2, 0x00f2ff);
-    this.physics.add.existing(ground, true);
-
-    // Jogadores com Escala e Sombra
-    p1 = createFighter(this, 200, 400, 'p1_tex', 0x00f2ff);
-    p2 = createFighter(this, 700, 400, 'p2_tex', 0xff0055);
-    p2.setFlipX(true);
-
-    // UI de Vida High-Tech
-    p1Bar = createUI(this, 60, 40, 'CYBER_01', 0x00f2ff);
-    p2Bar = createUI(this, 540, 40, 'NEON_02', 0xff0055);
-
-    // Colisões
-    this.physics.add.collider([p1, p2], ground);
-    this.physics.add.collider(p1, p2);
-
-    // Controles
-    cursors = this.input.keyboard.createCursorKeys();
-    keysP2 = this.input.keyboard.addKeys('W,A,S,D,SPACE');
-}
-
-function createFighter(scene, x, y, tex, color) {
-    let p = scene.physics.add.sprite(x, y, tex);
-    p.setCollideWorldBounds(true).setOrigin(0.5, 1);
-    p.hp = 100;
-    
-    // Animação Idle Profissional (Squash and Stretch)
-    scene.tweens.add({
-        targets: p,
-        scaleY: 0.95,
-        scaleX: 1.05,
-        duration: 600,
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.easeInOut'
-    });
-
-    // Luz aos pés (Shadow)
-    let shadow = scene.add.ellipse(x, y, 60, 10, 0x000000, 0.5);
-    p.shadow = shadow;
-
-    return p;
-}
-
-function createUI(scene, x, y, label, color) {
-    scene.add.text(x, y-20, label, { font: 'bold 16px Courier', fill: color });
-    scene.add.rectangle(x+150, y+5, 304, 16, 0xffffff, 0.1).setStrokeStyle(1, color);
-    return scene.add.rectangle(x+150, y+5, 300, 12, color);
-}
-
-function update() {
-    move(p1, cursors.left.isDown, cursors.right.isDown, cursors.up.isDown);
-    move(p2, keysP2.A.isDown, keysP2.D.isDown, keysP2.W.isDown);
-
-    if (Phaser.Input.Keyboard.JustDown(cursors.shift)) attack(this, p1, p2);
-    if (Phaser.Input.Keyboard.JustDown(keysP2.SPACE)) attack(this, p2, p1);
-
-    // Atualiza posição da sombra
-    [p1, p2].forEach(p => p.shadow.setPosition(p.x, 480));
-}
-
-function move(p, l, r, u) {
-    if (l) { p.setVelocityX(-350); p.setFlipX(true); }
-    else if (r) { p.setVelocityX(350); p.setFlipX(false); }
-    else p.setVelocityX(0);
-    if (u && p.body.touching.down) p.setVelocityY(-700);
-}
-
-function attack(scene, attacker, victim) {
-    if (attacker.isAttacking) return;
-    attacker.isAttacking = true;
-
-    // Efeito de Rastro (Afterimage)
-    for(let i=1; i<=3; i++) {
-        let ghost = scene.add.sprite(attacker.x, attacker.y, attacker.texture.key)
-            .setFlipX(attacker.flipX).setAlpha(0.4).setTint(0xffffff);
-        scene.tweens.add({ targets: ghost, alpha: 0, x: ghost.x + (attacker.flipX ? -50*i : 50*i), duration: 200, onComplete: () => ghost.destroy() });
-    }
-
-    // Impacto
-    let hitRange = 90;
-    if (Phaser.Math.Distance.Between(attacker.x, attacker.y, victim.x, victim.y) < hitRange) {
-        scene.cameras.main.shake(100, 0.01);
-        victim.hp -= 10;
-        updateBars();
         
-        // Flash de dano
-        victim.setTint(0xffffff);
-        scene.time.delayedCall(100, () => victim.clearTint());
-        victim.setVelocityX(attacker.flipX ? -600 : 600);
-    }
+        escudo.addEventListener('click', () => {
+            escudo.style.display = 'none';
+            imagemFlamengo.src = urlImagem1;
+            imagemFlamengo.style.display = 'block';
+            btnProximo.style.display = 'flex'; 
+            btnProximo.style.justifyContent = 'center';
+            btnProximo.style.alignItems = 'center';
+            titulo.innerText = "51 é pinga!";
+        });
 
-    scene.time.delayedCall(300, () => attacker.isAttacking = false);
-}
-
-function updateBars() {
-    p1Bar.width = (p1.hp/100) * 300;
-    p2Bar.width = (p2.hp/100) * 300;
-    if(p1.hp <= 0 || p2.hp <= 0) game.scene.scenes[0].add.text(450, 250, 'VITORIA', {fontSize: '80px', fill: '#fff'}).setOrigin(0.5);
-}
-</script>
+      
+        btnProximo.addEventListener('click', () => {
+            imagemFlamengo.src = urlImagem2;
+            titulo.innerText = "Chora Palmeiras!";
+            btnProximo.style.display = 'none'; 
+        });
+    </script>
 </body>
 </html>
