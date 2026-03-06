@@ -58,7 +58,6 @@
 
         .btn-acao:hover { background: #ff0000; transform: translateY(-50%) scale(1.1); }
 
-        /* Estilo da Calculadora */
         #calculadora {
             display: none;
             background: #333;
@@ -145,7 +144,7 @@
         const img1 = "https://lncimg.lance.com.br/cdn-cgi/image/width=950,quality=75,fit=pad,format=webp/uploads/2025/11/Memes-Flamengo-x-Palmeiras-Libertadores-2025-2.png";
         const img2 = "https://lncimg.lance.com.br/cdn-cgi/image/width=950,quality=75,fit=pad,format=webp/uploads/2025/11/Memes-Flamengo-x-Palmeiras-Libertadores-2025-3.png";
 
-        // 1. Escudo -> Imagem 1
+       
         escudo.addEventListener('click', () => {
             escudo.style.display = 'none';
             imagemFlamengo.src = img1;
@@ -154,7 +153,7 @@
             titulo.innerText = "51 é pinga!";
         });
 
-        // 2. Seta -> Imagem 2
+       
         btnProximo.addEventListener('click', () => {
             imagemFlamengo.src = img2;
             btnProximo.style.display = 'none';
@@ -162,7 +161,7 @@
             titulo.innerText = "O Rio de Janeiro continua sendo...";
         });
 
-        // 3. Botão Calculadora -> Mostra Calc
+    
         btnIrCalc.addEventListener('click', () => {
             imagemFlamengo.style.display = 'none';
             btnIrCalc.style.display = 'none';
