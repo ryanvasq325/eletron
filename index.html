@@ -7,7 +7,7 @@
     <title>Controle de TI - 4º BPM</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        /* Estilos Gerais */
+        /* --- ESTILOS DE INTERFACE (TELA) --- */
         .col-acoes { white-space: nowrap; width: 1%; }
         .search-container { max-width: 300px; }
 
@@ -22,27 +22,85 @@
         }
 
         .btn-setor:hover { transform: scale(1.05); filter: brightness(1.1); }
+        .btn-setor.active { border: 2px solid #000; transform: scale(1.05); box-shadow: 0 0 8px rgba(0,0,0,0.3); }
 
-        /* Cores de Identificação Lateral */
         .borda-setor-nti, .borda-setor-p3 { border-left: 6px solid #0d6efd !important; }
         .borda-setor-outros { border-left: 6px solid #dc3545 !important; }
 
-        /* Estilos de Impressão */
         .relatorio-header, .relatorio-footer { display: none; }
 
         @media print {
-            @page { size: landscape; margin: 1cm; }
-            html, body { background-color: white !important; color: black !important; font-size: 9pt; }
-            .no-print, .btn, .search-container, .card-header, .card-footer, #container-botoes, .modal, .col-acoes { display: none !important; }
-            .container-fluid { padding: 0 !important; margin: 0 !important; }
-            .card { border: none !important; }
-            .relatorio-header { display: block !important; text-align: center; margin-bottom: 15px; border-bottom: 2px solid #000; }
-            .relatorio-footer { display: block !important; margin-top: 30px; page-break-inside: avoid; }
-            table { width: 100% !important; border-collapse: collapse !important; }
-            th { background-color: #f2f2f2 !important; border: 1px solid #000 !important; padding: 5px !important; }
-            td { border: 1px solid #000 !important; padding: 5px !important; }
-            .linha-setor-print { background-color: #e9ecef !important; font-weight: bold; text-align: center; text-transform: uppercase; }
-            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            @page { 
+                size: landscape; 
+                margin: 1cm; 
+            }
+            
+            body { 
+                background-color: white !important; 
+                color: black !important; 
+                font-size: 9pt; 
+            }
+
+            .no-print, .btn, .search-container, .card-header, .card-footer, 
+            #container-botoes, .modal, .col-acoes, .btn-close, .badge-input { 
+                display: none !important; 
+            }
+
+            .container-fluid { padding: 0 !important; margin: 0 !important; width: 100% !important; }
+            .card { border: none !important; box-shadow: none !important; }
+            
+            .relatorio-header { 
+                display: flex !important; 
+                flex-direction: column;
+                align-items: center;
+                text-align: center; 
+                margin-bottom: 20px; 
+                border-bottom: 2px solid #000;
+                padding-bottom: 10px;
+            }
+
+            table { 
+                width: 100% !important; 
+                border-collapse: collapse !important; 
+                table-layout: fixed !important; 
+            }
+            
+            th, td { 
+                border: 1px solid #000 !important; 
+                padding: 4px !important; 
+            }
+
+            .titulo-setor-print {
+                background-color: #f0f0f0 !important;
+                font-weight: bold;
+                text-align: center;
+                text-transform: uppercase;
+                font-size: 10pt;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            /* --- ESTILOS DO RESUMO ESTATÍSTICO --- */
+            .tabela-resumo {
+                width: 280px !important;
+                margin-top: 15px;
+                margin-left: auto;
+                page-break-inside: avoid;
+            }
+            .tabela-resumo th { background-color: #eee !important; font-weight: bold; }
+
+            .relatorio-footer { 
+                display: block !important; 
+                margin-top: 30px; 
+                page-break-inside: avoid; 
+            }
+            .assinatura-box {
+                border-top: 1px solid #000;
+                width: 280px;
+                text-align: center;
+                padding-top: 5px;
+                margin: 0 40px;
+            }
         }
     </style>
 </head>
@@ -51,39 +109,33 @@
 
     <div class="container-fluid mt-4">
         <div class="relatorio-header">
-            <h4>POLÍCIA MILITAR DO ESTADO DE RONDÔNIA</h4>
-            <h5>4º BATALHÃO DE POLÍCIA MILITAR - CACOAL</h5>
-            <h6>INVENTÁRIO DE EQUIPAMENTOS DE TI - <span id="data-relatorio"></span></h6>
+            <h5 class="mb-0">GOVERNO DO ESTADO DE RONDÔNIA</h5>
+            <h5 class="mb-0">POLÍCIA MILITAR DO ESTADO DE RONDÔNIA</h5>
+            <h6 class="mb-0">4º BATALHÃO DE POLÍCIA MILITAR - CACOAL (RO)</h6>
+            <h6 class="mt-2 fw-bold text-decoration-underline">INVENTÁRIO E CONTROLE DE EQUIPAMENTOS DE TI</h6>
+            <small class="mt-1">Relatório gerado em: <span id="data-relatorio-texto"></span></small>
         </div>
 
         <div class="card shadow mb-4 no-print border-success">
             <div class="card-header bg-success text-white text-center py-1">
-                <h6 class="mb-0 fw-bold">PAINEL DE CONTROLE - SELECIONE O SETOR</h6>
+                <h6 class="mb-0 fw-bold">PAINEL DE CONTROLE - NTI 4º BPM</h6>
             </div>
             <div class="card-body bg-white text-center">
                 <div class="d-flex flex-wrap gap-2 justify-content-center" id="container-botoes">
-                    <button class="btn btn-danger btn-setor" onclick="filtrarPorSetor('P-1')">P-1</button>
-                    <button class="btn btn-danger btn-setor" onclick="filtrarPorSetor('P-2')">P-2</button>
-                    <button class="btn btn-primary btn-setor" onclick="filtrarPorSetor('P-3')">P-3</button>
-                    <button class="btn btn-danger btn-setor" onclick="filtrarPorSetor('P-4')">P-4</button>
-                    <button class="btn btn-danger btn-setor" onclick="filtrarPorSetor('P-5')">P-5</button>
-                    <button class="btn btn-danger btn-setor" onclick="filtrarPorSetor('P-6')">P-6</button>
-                    <button class="btn btn-danger btn-setor" onclick="filtrarPorSetor('CMD')">CMD</button>
-                    <button class="btn btn-danger btn-setor" onclick="filtrarPorSetor('SUB CMD')">SUB CMD</button>
-                    <button class="btn btn-danger btn-setor" onclick="filtrarPorSetor('CIA')">CIA</button>
-                    <button class="btn btn-danger btn-setor" onclick="filtrarPorSetor('C.O.')">C.O.</button>
-                    <button class="btn btn-danger btn-setor" onclick="filtrarPorSetor('RSV')">RSV</button>
-                    <button class="btn btn-danger btn-setor" onclick="filtrarPorSetor('JMS')">JMS</button>
-                    <button class="btn btn-danger btn-setor" onclick="filtrarPorSetor('V.A.')">V.A.</button>
-                    <button class="btn btn-danger btn-setor" onclick="filtrarPorSetor('TX.')">TX.</button>
-                    <button class="btn btn-danger btn-setor" onclick="filtrarPorSetor('M. ANDR')">M. ANDR</button>
-                    <button class="btn btn-danger btn-setor" onclick="filtrarPorSetor('RIOZ.')">RIOZ.</button>
-                    <button class="btn btn-danger btn-setor" onclick="filtrarPorSetor('NTFM')">NTFM</button>
-                    <button class="btn btn-primary btn-setor" onclick="filtrarPorSetor('NTI')">NTI</button>
-
+                    <button class="btn btn-danger btn-setor" onclick="filtrarPorSetor('P-1', this)">P-1</button>
+                    <button class="btn btn-danger btn-setor" onclick="filtrarPorSetor('P-2', this)">P-2</button>
+                    <button class="btn btn-primary btn-setor" onclick="filtrarPorSetor('P-3', this)">P-3</button>
+                    <button class="btn btn-danger btn-setor" onclick="filtrarPorSetor('P-4', this)">P-4</button>
+                    <button class="btn btn-danger btn-setor" onclick="filtrarPorSetor('P-5', this)">P-5</button>
+                    <button class="btn btn-danger btn-setor" onclick="filtrarPorSetor('P-6', this)">P-6</button>
+                    <button class="btn btn-danger btn-setor" onclick="filtrarPorSetor('CMD', this)">CMD</button>
+                    <button class="btn btn-danger btn-setor" onclick="filtrarPorSetor('SUB CMD', this)">SUB CMD</button>
+                    <button class="btn btn-danger btn-setor" onclick="filtrarPorSetor('CIA', this)">CIA</button>
+                    <button class="btn btn-danger btn-setor" onclick="filtrarPorSetor('NTI', this)">NTI</button>
+                    
                     <div class="w-100 mt-2 border-top pt-2"></div>
-                    <button class="btn btn-warning btn-setor text-dark" style="width: 200px" onclick="renderizarTabela()">VER TODOS</button>
-                    <button class="btn btn-outline-danger btn-setor" style="width: 200px" onclick="filtrarManutencao()">🛠️ MANUTENÇÃO</button>
+                    <button class="btn btn-warning btn-setor text-dark active" style="width: 200px" onclick="renderizarTabela(this)">VER TODOS</button>
+                    <button class="btn btn-outline-danger btn-setor" style="width: 200px" onclick="filtrarManutencao(this)">🛠️ MANUTENÇÃO</button>
                 </div>
             </div>
         </div>
@@ -94,44 +146,44 @@
                 <div class="d-flex gap-2 align-items-center">
                     <input type="text" id="inputBusca" class="form-control form-control-sm search-container" placeholder="🔍 Buscar usuário ou ID..." onkeyup="filtrarTabela()">
                     <button class="btn btn-sm btn-light border" onclick="imprimirRelatorio()">🖨️ Imprimir</button>
-                    <button class="btn btn-sm btn-primary" onclick="abrirModalCadastro()">+ Novo</button>
+                    <button id="btnNovoRegistro" class="btn btn-sm btn-primary" onclick="abrirModalCadastro()">+ Novo</button>
                 </div>
             </div>
 
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-bordered table-hover mb-0">
-                        <thead class="table-secondary text-center">
+                    <table class="table table-bordered table-hover mb-0" id="tabela-principal">
+                        <thead class="table-secondary text-center text-uppercase">
                             <tr>
                                 <th style="width: 40px">#</th>
-                                <th style="width: 120px">IDENTIFICAÇÃO</th>
-                                <th>USUÁRIO</th>
-                                <th>MONITOR</th>
-                                <th style="width: 130px">IP</th>
-                                <th style="width: 120px">SITUAÇÃO</th>
-                                <th>OBSERVAÇÕES</th>
-                                <th class="no-print">AÇÕES</th>
+                                <th style="width: 10%">Identificação</th>
+                                <th style="width: 20%">Usuário</th>
+                                <th style="width: 15%">Monitor</th>
+                                <th style="width: 12%">IP</th>
+                                <th style="width: 10%">Situação</th>
+                                <th style="width: 33%">Observações</th>
+                                <th class="no-print">Ações</th>
                             </tr>
                         </thead>
                         <tbody id="corpo-tabela"></tbody>
                     </table>
                 </div>
 
-                <div class="relatorio-footer mt-5 pt-4">
-                    <div class="d-flex justify-content-around text-center">
-                        <div style="width: 250px; border-top: 1px solid #000;">
-                            <small class="fw-bold">Responsável pela Atualização</small><br>
-                            <small>NTI - 4º BPM</small>
+                <div class="relatorio-footer">
+                    <div class="d-flex justify-content-center">
+                        <div class="assinatura-box">
+                            <small class="fw-bold">Responsável Técnico</small><br>
+                            <small>Seção de Informática - 4º BPM</small>
                         </div>
-                        <div style="width: 250px; border-top: 1px solid #000;">
-                            <small class="fw-bold">Cmt / Chefe da Seção</small><br>
-                            <small>Visto / Ciência</small>
+                        <div class="assinatura-box">
+                            <small class="fw-bold">Comandante / Chefe</small><br>
+                            <small>Visto e Ciência</small>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="card-footer bg-white py-2 no-print">
-                <small class="text-muted" id="contador-registros">Carregando...</small>
+            <div class="card-footer bg-white py-2 no-print text-end">
+                <small class="text-muted" id="contador-registros">Aguardando...</small>
             </div>
         </div>
     </div>
@@ -148,19 +200,19 @@
                         <input type="hidden" id="edit-id">
                         <div class="col-md-4">
                             <label class="form-label fw-bold">Identificação</label>
-                            <input type="text" class="form-control" id="identificacao" placeholder="Ex: P-1-01" required>
+                            <input type="text" class="form-control" id="identificacao" placeholder="P1-XX" required oninput="this.value = this.value.toUpperCase()">
                         </div>
                         <div class="col-md-8">
                             <label class="form-label fw-bold">Usuário / Graduação</label>
-                            <input type="text" class="form-control" id="usuario" placeholder="Ex: SGT PM FULANO" required>
+                            <input type="text" class="form-control" id="usuario" placeholder="Ex: SGT PM FULANO" required oninput="this.value = this.value.toUpperCase()">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Monitor e Tombamento</label>
-                            <textarea class="form-control text-danger fw-bold" id="monitor_info" rows="2"></textarea>
+                            <textarea class="form-control text-danger fw-bold" id="monitor_info" rows="2" oninput="this.value = this.value.toUpperCase()"></textarea>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Endereço IP</label>
-                            <input type="text" class="form-control" id="ip_maquina" placeholder="Ex: 10.15.X.X">
+                            <input type="text" class="form-control" id="ip_maquina" placeholder="10.15.X.X">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-bold">Situação</label>
@@ -172,7 +224,7 @@
                         </div>
                         <div class="col-12">
                             <label class="form-label fw-bold">Observações Técnicas</label>
-                            <textarea class="form-control" id="observacoes" rows="2"></textarea>
+                            <textarea class="form-control" id="observacoes" rows="2" oninput="this.value = this.value.toUpperCase()"></textarea>
                         </div>
                         <div class="modal-footer px-0 pb-0">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
@@ -190,40 +242,96 @@
         let setorAtivoParaDica = 'NTI';
 
         const configuracaoSetores = {
-            'P-1': { id: 'P-1-XX', ip: '10.15.3.X' }, 'P-2': { id: 'P-2-XX', ip: '10.15.4.X' },
-            'P-3': { id: 'P-3-XX', ip: '10.15.1.X' }, 'P-4': { id: 'P-4-XX', ip: '10.15.5.X' },
-            'P-5': { id: 'P-5-XX', ip: '10.15.6.X' }, 'P-6': { id: 'P-6-XX', ip: '10.15.7.X' },
-            'CMD': { id: 'CMD-XX', ip: '10.15.0.X' }, 'SUB CMD': { id: 'SUB-XX', ip: '10.15.0.X' },
-            'CIA': { id: 'CIA-XX', ip: '10.15.8.X' }, 'C.O.': { id: 'CO-XX', ip: '10.15.9.X' },
-            'RSV': { id: 'RSV-XX', ip: '10.15.10.X' }, 'JMS': { id: 'JMS-XX', ip: '10.15.11.X' },
-            'V.A.': { id: 'VA-XX', ip: '10.15.12.X' }, 'TX.': { id: 'TX-XX', ip: '10.15.13.X' },
-            'M. ANDR': { id: 'MA-XX', ip: '10.15.14.X' }, 'RIOZ.': { id: 'RZ-XX', ip: '10.15.15.X' },
-            'NTFM': { id: 'NTFM-XX', ip: '10.15.20.X' }, 'NTI': { id: 'NTI-XX', ip: '10.15.2.X' }
+            'P-1': { id: 'P1-XX', ip: '10.15.3.X' }, 
+            'P-2': { id: 'P2-XX', ip: '10.15.4.X' },
+            'P-3': { id: 'P3-XX', ip: '10.15.1.X' }, 
+            'P-4': { id: 'P4-XX', ip: '10.15.5.X' },
+            'P-5': { id: 'P5-XX', ip: '10.15.6.X' }, 
+            'P-6': { id: 'P6-XX', ip: '10.15.7.X' },
+            'CMD': { id: 'CMD1-XX', ip: '10.15.0.X' }, 
+            'SUB CMD': { id: 'SUB1-XX', ip: '10.15.0.X' },
+            'NTI': { id: 'NTI1-XX', ip: '10.15.2.X' }
         };
 
-        async function renderizarTabela() {
+        function marcarAtivo(elemento) {
+            document.querySelectorAll('.btn-setor').forEach(b => b.classList.remove('active'));
+            if (elemento) {
+                elemento.classList.add('active');
+                const btnNovo = document.getElementById('btnNovoRegistro');
+                const textoBotao = elemento.innerText.toUpperCase();
+                btnNovo.style.display = (textoBotao.includes("VER TODOS") || textoBotao.includes("MANUTENÇÃO")) ? 'none' : 'block';
+            }
+        }
+
+        function atualizarVisualizacao() {
+            const btnAtivo = document.querySelector('.btn-setor.active');
+            if (btnAtivo) {
+                if (btnAtivo.innerText.includes("VER TODOS")) renderizarTabela(btnAtivo);
+                else if (btnAtivo.innerText.includes("MANUTENÇÃO")) filtrarManutencao(btnAtivo);
+                else filtrarPorSetor(setorAtivoParaDica, btnAtivo);
+            } else renderizarTabela();
+        }
+
+        async function renderizarTabela(btn) {
+            const btnTodos = btn || document.querySelector('button[onclick*="renderizarTabela"]');
+            if(btnTodos) marcarAtivo(btnTodos);
             document.getElementById('titulo-sessao').innerText = "Controle de Máquinas - Geral";
-            listaAtualComputadores = await window.api.getComputadores();
-            desenharLinhas(listaAtualComputadores);
+            try {
+                const response = await window.api.getComputadores();
+                listaAtualComputadores = response || [];
+                desenharLinhas(listaAtualComputadores);
+            } catch (error) { console.error("Erro:", error); }
+        }
+
+        async function filtrarPorSetor(prefixo, btn) {
+            marcarAtivo(btn);
+            setorAtivoParaDica = prefixo;
+            document.getElementById('titulo-sessao').innerText = `Setor: ${prefixo}`;
+            const setorParaView = prefixo.replace(/[\.\s-]/g, '').toLowerCase();
+            try {
+                const filtrados = await window.api.getComputadoresPorSetor(setorParaView);
+                desenharLinhas(filtrados);
+            } catch (error) {
+                const backup = listaAtualComputadores.filter(i => i.identificacao.toUpperCase().startsWith(prefixo.toUpperCase()));
+                desenharLinhas(backup);
+            }
+        }
+
+        async function filtrarManutencao(btn) {
+            marcarAtivo(btn);
+            document.getElementById('titulo-sessao').innerText = "Equipamentos em MANUTENÇÃO";
+            try {
+                const filtrados = await window.api.getComputadoresPorSetor('ti_manutencao');
+                desenharLinhas(filtrados);
+            } catch (e) {
+                const backup = listaAtualComputadores.filter(i => i.situacao === 'MANUTENÇÃO');
+                desenharLinhas(backup);
+            }
         }
 
         function desenharLinhas(dados) {
             const corpo = document.getElementById('corpo-tabela');
             document.getElementById('contador-registros').innerText = `Total: ${dados.length} registro(s)`;
+            
             if (dados.length === 0) {
                 corpo.innerHTML = `<tr><td colspan="8" class="text-center py-3 text-muted">Nenhum registro encontrado.</td></tr>`;
                 return;
             }
+
             corpo.innerHTML = dados.map((item, index) => {
                 let badge = item.situacao === 'OTIMO' ? 'bg-success' : item.situacao === 'BOM' ? 'bg-warning text-dark' : 'bg-danger';
-                let borda = (item.identificacao.startsWith('P-3') || item.identificacao.startsWith('NTI')) ? 'borda-setor-nti' : 'borda-setor-outros';
+                let borda = (item.identificacao.startsWith('P3') || item.identificacao.startsWith('NTI')) ? 'borda-setor-nti' : 'borda-setor-outros';
+                
                 return `<tr class="align-middle ${borda}">
                     <td class="text-center small text-muted">${index + 1}</td>
                     <td class="fw-bold text-primary">${item.identificacao}</td>
                     <td>${item.usuario}</td>
                     <td class="small text-danger fw-bold">${item.monitor_info || '-'}</td>
                     <td class="text-center font-monospace">${item.ip_maquina || '-'}</td>
-                    <td class="text-center"><span class="badge ${badge} p-2 w-100">${item.situacao}</span></td>
+                    <td class="text-center">
+                        <span class="badge ${badge} p-2 w-100 badge-input">${item.situacao}</span>
+                        <span class="d-none d-print-block">${item.situacao}</span>
+                    </td>
                     <td class="small text-muted" style="font-size: 0.75rem;">${item.observacoes || '-'}</td>
                     <td class="col-acoes text-center no-print">
                         <button class="btn btn-sm btn-outline-warning" onclick="prepararEdicao(${item.id})">✏️</button>
@@ -233,110 +341,86 @@
             }).join('');
         }
 
-        function filtrarPorSetor(prefixo) {
-            setorAtivoParaDica = prefixo;
-            document.getElementById('titulo-sessao').innerText = `Setor: ${prefixo}`;
-            const filtrados = listaAtualComputadores.filter(i => i.identificacao.toUpperCase().startsWith(prefixo.toUpperCase()));
-            desenharLinhas(filtrados);
-        }
-
-        function filtrarManutencao() {
-            document.getElementById('titulo-sessao').innerText = "Equipamentos em MANUTENÇÃO";
-            const filtrados = listaAtualComputadores.filter(i => i.situacao === 'MANUTENÇÃO');
-            desenharLinhas(filtrados);
-        }
-
+        /* --- FUNÇÃO DE IMPRESSÃO ATUALIZADA COM RESUMO --- */
         function imprimirRelatorio() {
-            const titulo = document.getElementById('titulo-sessao').innerText;
-            document.getElementById('data-relatorio').innerText = new Date().toLocaleString('pt-BR');
-            const corpo = document.getElementById('corpo-tabela');
-            const backupTabela = corpo.innerHTML;
-
-            let htmlFinal = '';
-            let total = 0;
-
-            if (titulo === "Controle de Máquinas - Geral") {
-                const setores = {};
-                listaAtualComputadores.forEach(i => {
-                    const s = i.identificacao.split('-')[0].trim().toUpperCase();
-                    if (!setores[s]) setores[s] = [];
-                    setores[s].push(i);
-                });
-                Object.keys(setores).sort().forEach(s => {
-                    htmlFinal += `<tr class="linha-setor-print"><td colspan="7">SETOR: ${s}</td></tr>`;
-                    setores[s].forEach((i, idx) => {
-                        total++;
-                        htmlFinal += criarLinhaImpressao(idx + 1, i);
-                    });
-                });
-            } else {
-                htmlFinal += `<tr class="linha-setor-print"><td colspan="7">${titulo.toUpperCase()}</td></tr>`;
-                const prefixo = titulo.replace("Setor: ", "");
-                const dadosFiltro = titulo.includes("MANUTENÇÃO") 
-                    ? listaAtualComputadores.filter(i => i.situacao === 'MANUTENÇÃO')
-                    : listaAtualComputadores.filter(i => i.identificacao.toUpperCase().startsWith(prefixo.toUpperCase()));
-                
-                dadosFiltro.forEach((i, idx) => {
-                    total++;
-                    htmlFinal += criarLinhaImpressao(idx + 1, i);
-                });
-            }
-
-            htmlFinal += `<tr class="fw-bold"><td colspan="6" class="text-end">TOTAL DE ITENS:</td><td class="text-center">${total}</td></tr>`;
-            corpo.innerHTML = htmlFinal;
-
-            setTimeout(() => {
+            const agora = new Date();
+            document.getElementById('data-relatorio-texto').innerText = agora.toLocaleString('pt-BR');
+            
+            const tabelaOriginal = document.getElementById('corpo-tabela');
+            const linhas = Array.from(tabelaOriginal.querySelectorAll('tr'));
+            
+            if (linhas.length === 0 || (linhas[0] && linhas[0].innerText.includes("Nenhum registro"))) {
                 window.print();
-                corpo.innerHTML = backupTabela;
-            }, 500);
-        }
-
-        function criarLinhaImpressao(num, i) {
-            return `<tr>
-                <td class="text-center">${num}</td>
-                <td class="fw-bold">${i.identificacao}</td>
-                <td>${i.usuario}</td>
-                <td class="small">${i.monitor_info || '-'}</td>
-                <td class="text-center">${i.ip_maquina || '-'}</td>
-                <td class="text-center">${i.situacao}</td>
-                <td class="small">${i.observacoes || '-'}</td>
-            </tr>`;
-        }
-
-        function atualizarDicasModal(setor) {
-            const config = configuracaoSetores[setor] || { id: 'P-1-01', ip: '10.15.X.X' };
-            document.getElementById('identificacao').placeholder = `Ex: ${config.id}`;
-            document.getElementById('ip_maquina').placeholder = `Ex: ${config.ip}`;
-        }
-
-        function abrirModalCadastro() {
-            document.getElementById('formCadastro').reset();
-            document.getElementById('edit-id').value = '';
-            document.getElementById('modalTitle').innerText = 'Novo Registro';
-            document.getElementById('modalHeader').className = 'modal-header bg-primary text-white';
-            atualizarDicasModal(setorAtivoParaDica);
-            new bootstrap.Modal(document.getElementById('modalCadastro')).show();
-        }
-
-        function prepararEdicao(id) {
-            const item = listaAtualComputadores.find(c => c.id === id);
-            document.getElementById('edit-id').value = item.id;
-            document.getElementById('identificacao').value = item.identificacao;
-            document.getElementById('usuario').value = item.usuario;
-            document.getElementById('monitor_info').value = item.monitor_info;
-            document.getElementById('ip_maquina').value = item.ip_maquina;
-            document.getElementById('situacao').value = item.situacao;
-            document.getElementById('observacoes').value = item.observacoes;
-            document.getElementById('modalTitle').innerText = 'Editar Registro';
-            document.getElementById('modalHeader').className = 'modal-header bg-warning text-dark';
-            new bootstrap.Modal(document.getElementById('modalCadastro')).show();
-        }
-
-        async function excluir(id) {
-            if (confirm('Excluir permanentemente?')) {
-                const res = await window.api.excluirComputador(id);
-                if (res.success) renderizarTabela();
+                return;
             }
+
+            const htmlOriginal = tabelaOriginal.innerHTML;
+            const setores = {};
+            const totais = { 'OTIMO': 0, 'BOM': 0, 'MANUTENÇÃO': 0 };
+
+            // Agrupar por setor e contar situações para o resumo
+            linhas.forEach(linha => {
+                const idTexto = linha.cells[1].innerText;
+                const situacao = linha.cells[5].innerText.trim().toUpperCase();
+                const setor = idTexto.split('-')[0] || "DIVERSOS";
+                
+                if (!setores[setor]) setores[setor] = [];
+                setores[setor].push(linha.outerHTML);
+
+                if (totais.hasOwnProperty(situacao)) {
+                    totais[situacao]++;
+                }
+            });
+
+            // Reorganizar conteúdo para impressão por setor
+            let novoConteudo = "";
+            for (const setor in setores) {
+                novoConteudo += `
+                    <tr>
+                        <td colspan="8" class="titulo-setor-print">
+                            SETOR: ${setor} (${setores[setor].length} MÁQS)
+                        </td>
+                    </tr>${setores[setor].join('')}`;
+            }
+
+            // Inserir tabela de resumo no final
+            const totalGeral = totais['OTIMO'] + totais['BOM'] + totais['MANUTENÇÃO'];
+            const resumoHtml = `
+                <tr class="no-print-row"><td colspan="8" style="border:none !important; height: 15px;"></td></tr>
+                <tr>
+                    <td colspan="5" style="border:none !important;"></td>
+                    <td colspan="3" style="border:none !important; padding:0 !important;">
+                        <table class="table table-sm table-bordered tabela-resumo">
+                            <thead>
+                                <tr><th colspan="2" class="text-center">RESUMO GERAL</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>🟢 OTIMO</td><td class="text-center">${totais['OTIMO']}</td></tr>
+                                <tr><td>🟡 BOM</td><td class="text-center">${totais['BOM']}</td></tr>
+                                <tr><td>🔴 MANUTENÇÃO</td><td class="text-center">${totais['MANUTENÇÃO']}</td></tr>
+                                <tr class="fw-bold" style="background-color: #f8f9fa !important;">
+                                    <td>TOTAL GERAL</td><td class="text-center">${totalGeral}</td></tr>
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>`;
+
+            tabelaOriginal.innerHTML = novoConteudo + resumoHtml;
+            
+            window.print();
+            
+            // Restaura o estado da tela
+            tabelaOriginal.innerHTML = htmlOriginal;
+        }
+
+        function filtrarTabela() {
+            const termo = document.getElementById('inputBusca').value.toLowerCase();
+            const filtrados = listaAtualComputadores.filter(i =>
+                i.usuario.toLowerCase().includes(termo) || 
+                i.identificacao.toLowerCase().includes(termo) ||
+                (i.ip_maquina && i.ip_maquina.includes(termo))
+            );
+            desenharLinhas(filtrados);
         }
 
         document.getElementById('formCadastro').addEventListener('submit', async (e) => {
@@ -353,21 +437,44 @@
             const res = await window.api.salvarComputador(dados);
             if (res.success) {
                 bootstrap.Modal.getInstance(document.getElementById('modalCadastro')).hide();
-                renderizarTabela();
-            }
+                atualizarVisualizacao();
+            } else { alert("Erro ao salvar: " + res.error); }
         });
 
-        function filtrarTabela() {
-            const termo = document.getElementById('inputBusca').value.toLowerCase();
-            const filtrados = listaAtualComputadores.filter(i =>
-                i.usuario.toLowerCase().includes(termo) || 
-                i.identificacao.toLowerCase().includes(termo) ||
-                (i.ip_maquina && i.ip_maquina.includes(termo))
-            );
-            desenharLinhas(filtrados);
+        async function excluir(id) {
+            if (confirm('Excluir permanentemente?')) {
+                const res = await window.api.excluirComputador(id);
+                if (res.success) atualizarVisualizacao();
+            }
         }
 
-        renderizarTabela();
+        function prepararEdicao(id) {
+            const item = listaAtualComputadores.find(c => c.id == id);
+            if(!item) return;
+            document.getElementById('edit-id').value = item.id;
+            document.getElementById('identificacao').value = item.identificacao;
+            document.getElementById('usuario').value = item.usuario;
+            document.getElementById('monitor_info').value = item.monitor_info;
+            document.getElementById('ip_maquina').value = item.ip_maquina;
+            document.getElementById('situacao').value = item.situacao;
+            document.getElementById('observacoes').value = item.observacoes;
+            document.getElementById('modalTitle').innerText = 'Editar Registro';
+            document.getElementById('modalHeader').className = 'modal-header bg-warning text-dark';
+            new bootstrap.Modal(document.getElementById('modalCadastro')).show();
+        }
+
+        function abrirModalCadastro() {
+            document.getElementById('formCadastro').reset();
+            document.getElementById('edit-id').value = '';
+            document.getElementById('modalTitle').innerText = 'Novo Registro';
+            document.getElementById('modalHeader').className = 'modal-header bg-primary text-white';
+            const config = configuracaoSetores[setorAtivoParaDica] || { id: 'P1-XX', ip: '10.15.X.X' };
+            document.getElementById('identificacao').value = config.id.replace('XX', '');
+            document.getElementById('ip_maquina').value = config.ip.replace('X', '');
+            new bootstrap.Modal(document.getElementById('modalCadastro')).show();
+        }
+
+        window.onload = renderizarTabela;
     </script>
 </body>
 </html>

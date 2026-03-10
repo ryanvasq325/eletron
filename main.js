@@ -1,15 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
-const { Pool } = require('pg');
-
-// Configuração do Banco de Dados
-const pool = new Pool({
-    user: 'senac',
-    host: 'localhost', 
-    database: 'calango',
-    password: 'senac',
-    port: 5432,
-});
+const db = require('./db.js'); 
 
 const createWindow = () => {
     const win = new BrowserWindow({
@@ -21,42 +12,65 @@ const createWindow = () => {
             nodeIntegration: false
         }
     });
+
+    win.setMenuBarVisibility(false); 
     win.loadFile('index.html');
 };
 
-// 1. BUSCAR DADOS (Utilizado pelo 'renderizarTabela')
+// 1. BUSCAR DADOS (Geral)
 ipcMain.handle('buscar-computadores', async () => {
     try {
-        const res = await pool.query('SELECT * FROM inventario_ti ORDER BY identificacao ASC');
-        return res.rows;
+        const { data, error } = await db.supabase
+            .from('inventario_ti')
+            .select('*')
+            .order('identificacao', { ascending: true });
+
+        if (error) throw error;
+        return data || [];
     } catch (err) {
-        console.error("Erro ao buscar no Postgres:", err);
+        console.error("Erro ao buscar no Supabase:", err.message);
         return [];
     }
 });
 
-// 2. SALVAR OU ATUALIZAR (Lógica de Upsert baseada no ID)
+// BUSCAR POR SETOR (Atualizado para nomes limpos)
+ipcMain.handle('buscar-por-setor', async (event, setor) => {
+    try {
+        // O HTML já envia o setor limpo (ex: 'p1', 'subcmd', 'ti_manutencao')
+        const viewName = `v_setor_${setor}`;
+        
+        const { data, error } = await db.supabase
+            .from(viewName) // Removidas as aspas duplas extras
+            .select('*')
+            .order('identificacao', { ascending: true });
+
+        if (error) throw error;
+        return data || [];
+    } catch (err) {
+        console.error(`Erro ao buscar na view v_setor_${setor}:`, err.message);
+        return [];
+    }
+});
+
+// 2. SALVAR OU ATUALIZAR
 ipcMain.handle('salvar-computador', async (event, dados) => {
     try {
-        if (dados.id) {
-            // Se tem ID, estamos EDITANDO (UPDATE)
-            const query = `
-                UPDATE inventario_ti 
-                SET identificacao=$1, usuario=$2, monitor_info=$3, ip_maquina=$4, situacao=$5, observacoes=$6
-                WHERE id=$7`;
-            const values = [dados.identificacao, dados.usuario, dados.monitor_info, dados.ip_maquina, dados.situacao, dados.observacoes, dados.id];
-            await pool.query(query, values);
-        } else {
-            // Se não tem ID, estamos CADASTRANDO NOVO (INSERT)
-            const query = `
-                INSERT INTO inventario_ti (identificacao, usuario, monitor_info, ip_maquina, situacao, observacoes)
-                VALUES ($1, $2, $3, $4, $5, $6)`;
-            const values = [dados.identificacao, dados.usuario, dados.monitor_info, dados.ip_maquina, dados.situacao, dados.observacoes];
-            await pool.query(query, values);
-        }
+        const { data, error } = await db.supabase
+            .from('inventario_ti')
+            .upsert({ 
+                id: dados.id || undefined, 
+                identificacao: dados.identificacao,
+                usuario: dados.usuario,
+                monitor_info: dados.monitor_info,
+                ip_maquina: dados.ip_maquina,
+                situacao: dados.situacao,
+                observacoes: dados.observacoes
+            });
+
+        if (error) throw error;
         return { success: true };
     } catch (err) {
-        console.error("Erro ao salvar/atualizar:", err);
+        console.error("Erro ao salvar:", err.message);
         return { success: false, error: err.message };
     }
 });
@@ -64,13 +78,21 @@ ipcMain.handle('salvar-computador', async (event, dados) => {
 // 3. EXCLUIR REGISTRO
 ipcMain.handle('excluir-computador', async (event, id) => {
     try {
-        await pool.query('DELETE FROM inventario_ti WHERE id = $1', [id]);
+        const { error } = await db.supabase
+            .from('inventario_ti')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
         return { success: true };
     } catch (err) {
-        console.error("Erro ao excluir:", err);
+        console.error("Erro ao excluir no Supabase:", err.message);
         return { success: false, error: err.message };
     }
 });
 
 app.whenReady().then(createWindow);
-app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
+
+app.on('window-all-closed', () => { 
+    if (process.platform !== 'darwin') app.quit(); 
+});

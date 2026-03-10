@@ -1,13 +1,14 @@
-const { Pool } = require('pg');
+const { createClient } = require('@supabase/supabase-js');
 
-const pool = new Pool({
-  user: 'senac',
-  host: 'localhost', 
-  database: 'calango',
-  password: 'senac',
-  port: 5432,
+// Use exatamente esta URL que funcionou no seu Chrome
+const supabaseUrl = 'https://dcxigqvzpggudziezlva.supabase.co';
+// Use a sua Publishable Key (Anon) que aparece na imagem anterior
+const supabaseKey = 'sb_publishable_tRo-dHajfEW_hX_1iLcf2Q_Y5q-jMgd'; 
+
+const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    persistSession: false // Evita erros de armazenamento local no Electron
+  }
 });
 
-module.exports = {
-  query: (text, params) => pool.query(text, params),
-};
+module.exports = { supabase };
