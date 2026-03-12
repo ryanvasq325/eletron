@@ -17,7 +17,7 @@ const createWindow = () => {
     win.loadFile('index.html');
 };
 
-// 1. BUSCAR DADOS (Geral)
+
 ipcMain.handle('buscar-computadores', async () => {
     try {
         const { data, error } = await db.supabase
@@ -33,14 +33,14 @@ ipcMain.handle('buscar-computadores', async () => {
     }
 });
 
-// BUSCAR POR SETOR (Atualizado para nomes limpos)
+
 ipcMain.handle('buscar-por-setor', async (event, setor) => {
     try {
-        // O HTML já envia o setor limpo (ex: 'p1', 'subcmd', 'ti_manutencao')
+        
         const viewName = `v_setor_${setor}`;
         
         const { data, error } = await db.supabase
-            .from(viewName) // Removidas as aspas duplas extras
+            .from(viewName) 
             .select('*')
             .order('identificacao', { ascending: true });
 
@@ -52,7 +52,7 @@ ipcMain.handle('buscar-por-setor', async (event, setor) => {
     }
 });
 
-// 2. SALVAR OU ATUALIZAR
+
 ipcMain.handle('salvar-computador', async (event, dados) => {
     try {
         const { data, error } = await db.supabase
@@ -75,7 +75,6 @@ ipcMain.handle('salvar-computador', async (event, dados) => {
     }
 });
 
-// 3. EXCLUIR REGISTRO
 ipcMain.handle('excluir-computador', async (event, id) => {
     try {
         const { error } = await db.supabase
