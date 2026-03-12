@@ -80,7 +80,6 @@
                 print-color-adjust: exact;
             }
 
-            /* --- ESTILOS DO RESUMO ESTATÍSTICO --- */
             .tabela-resumo {
                 width: 280px !important;
                 margin-top: 15px;
@@ -200,7 +199,7 @@
                         <input type="hidden" id="edit-id">
                         <div class="col-md-4">
                             <label class="form-label fw-bold">Identificação</label>
-                            <input type="text" class="form-control" id="identificacao" placeholder="P1-XX" required oninput="this.value = this.value.toUpperCase()">
+                            <input type="text" class="form-control" id="identificacao" placeholder="P1-XX" required>
                         </div>
                         <div class="col-md-8">
                             <label class="form-label fw-bold">Usuário / Graduação</label>
@@ -212,7 +211,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Endereço IP</label>
-                            <input type="text" class="form-control" id="ip_maquina" placeholder="10.15.X.X">
+                            <input type="text" class="form-control" id="ip_maquina" placeholder="Ex: 10.15.X.X">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-bold">Situação</label>
@@ -242,15 +241,21 @@
         let setorAtivoParaDica = 'NTI';
 
         const configuracaoSetores = {
-            'P-1': { id: 'P1-XX', ip: '10.15.3.X' }, 
-            'P-2': { id: 'P2-XX', ip: '10.15.4.X' },
-            'P-3': { id: 'P3-XX', ip: '10.15.1.X' }, 
-            'P-4': { id: 'P4-XX', ip: '10.15.5.X' },
-            'P-5': { id: 'P5-XX', ip: '10.15.6.X' }, 
-            'P-6': { id: 'P6-XX', ip: '10.15.7.X' },
-            'CMD': { id: 'CMD1-XX', ip: '10.15.0.X' }, 
-            'SUB CMD': { id: 'SUB1-XX', ip: '10.15.0.X' },
-            'NTI': { id: 'NTI1-XX', ip: '10.15.2.X' }
+            'P-1': { id: 'P1-' }, 
+            'P-2': { id: 'P2-' },
+            'P-3': { id: 'P3-' }, 
+            'P-4': { id: 'P4-' },
+            'P-5': { id: 'P5-' }, 
+            'P-6': { id: 'P6-' },
+            'CMD': { id: 'CMD-' }, 
+            'SUB CMD': { id: 'SUB-' },
+            'NTI': { id: 'NTI-' },
+            'CIA': { id: 'CIA-' }
+        };
+
+        window.onload = async () => {
+            await renderizarTabela(); 
+            configurarMonitorDePrefixo();
         };
 
         function marcarAtivo(elemento) {
@@ -263,13 +268,14 @@
             }
         }
 
-        function atualizarVisualizacao() {
+        async function atualizarVisualizacao() {
             const btnAtivo = document.querySelector('.btn-setor.active');
             if (btnAtivo) {
-                if (btnAtivo.innerText.includes("VER TODOS")) renderizarTabela(btnAtivo);
-                else if (btnAtivo.innerText.includes("MANUTENÇÃO")) filtrarManutencao(btnAtivo);
-                else filtrarPorSetor(setorAtivoParaDica, btnAtivo);
-            } else renderizarTabela();
+                const texto = btnAtivo.innerText.toUpperCase();
+                if (texto.includes("VER TODOS")) await renderizarTabela(btnAtivo);
+                else if (texto.includes("MANUTENÇÃO")) await filtrarManutencao(btnAtivo);
+                else await filtrarPorSetor(setorAtivoParaDica, btnAtivo);
+            } else await renderizarTabela();
         }
 
         async function renderizarTabela(btn) {
@@ -290,11 +296,10 @@
             const setorParaView = prefixo.replace(/[\.\s-]/g, '').toLowerCase();
             try {
                 const filtrados = await window.api.getComputadoresPorSetor(setorParaView);
+                const todos = await window.api.getComputadores();
+                listaAtualComputadores = todos || [];
                 desenharLinhas(filtrados);
-            } catch (error) {
-                const backup = listaAtualComputadores.filter(i => i.identificacao.toUpperCase().startsWith(prefixo.toUpperCase()));
-                desenharLinhas(backup);
-            }
+            } catch (error) { console.error("Erro no filtro:", error); }
         }
 
         async function filtrarManutencao(btn) {
@@ -302,11 +307,10 @@
             document.getElementById('titulo-sessao').innerText = "Equipamentos em MANUTENÇÃO";
             try {
                 const filtrados = await window.api.getComputadoresPorSetor('ti_manutencao');
+                const todos = await window.api.getComputadores();
+                listaAtualComputadores = todos || [];
                 desenharLinhas(filtrados);
-            } catch (e) {
-                const backup = listaAtualComputadores.filter(i => i.situacao === 'MANUTENÇÃO');
-                desenharLinhas(backup);
-            }
+            } catch (e) { console.error(e); }
         }
 
         function desenharLinhas(dados) {
@@ -341,86 +345,95 @@
             }).join('');
         }
 
-        /* --- FUNÇÃO DE IMPRESSÃO ATUALIZADA COM RESUMO --- */
-        function imprimirRelatorio() {
-            const agora = new Date();
-            document.getElementById('data-relatorio-texto').innerText = agora.toLocaleString('pt-BR');
+        // --- FUNÇÕES DE MODAL CORRIGIDAS ---
+
+        async function prepararEdicao(id) {
+            const item = listaAtualComputadores.find(c => c.id == id);
+            if(!item) return;
+
+            // Limpeza de Backdrops que travam a escrita
+            const backdrops = document.querySelectorAll('.modal-backdrop');
+            backdrops.forEach(b => b.remove());
+            document.body.classList.remove('modal-open');
+            document.body.style.paddingRight = '0';
+
+            document.getElementById('edit-id').value = item.id;
+            document.getElementById('identificacao').value = item.identificacao;
+            document.getElementById('usuario').value = item.usuario;
+            document.getElementById('monitor_info').value = item.monitor_info;
+            document.getElementById('ip_maquina').value = item.ip_maquina || '';
+            document.getElementById('situacao').value = item.situacao;
+            document.getElementById('observacoes').value = item.observacoes;
+
+            document.getElementById('modalTitle').innerText = 'Editar Registro';
+            document.getElementById('modalHeader').className = 'modal-header bg-warning text-dark';
+            document.getElementById('btnSalvar').className = 'btn btn-warning fw-bold text-dark';
+            document.getElementById('btnSalvar').innerText = 'Atualizar no Banco';
+
+            const modalEl = document.getElementById('modalCadastro');
+            const m = bootstrap.Modal.getOrCreateInstance(modalEl);
+            m.show();
+        }
+
+        function abrirModalCadastro() {
+            // Limpeza preventiva
+            const backdrops = document.querySelectorAll('.modal-backdrop');
+            backdrops.forEach(b => b.remove());
+
+            const form = document.getElementById('formCadastro');
+            form.reset();
+            document.getElementById('edit-id').value = '';
+
+            document.getElementById('modalTitle').innerText = 'Novo Registro';
+            document.getElementById('modalHeader').className = 'modal-header bg-primary text-white';
+            document.getElementById('btnSalvar').className = 'btn btn-success';
+            document.getElementById('btnSalvar').innerText = 'Salvar no Banco';
+
+            const config = configuracaoSetores[setorAtivoParaDica] || { id: '' };
+            const inputId = document.getElementById('identificacao');
+            inputId.value = config.id;
+
+            const modalEl = document.getElementById('modalCadastro');
+            const m = bootstrap.Modal.getOrCreateInstance(modalEl);
+            m.show();
+
+            modalEl.addEventListener('shown.bs.modal', function () {
+                inputId.focus();
+                const val = inputId.value;
+                inputId.value = '';
+                inputId.value = val;
+            }, { once: true });
+        }
+
+        function configurarMonitorDePrefixo() {
+            const inputId = document.getElementById('identificacao');
             
-            const tabelaOriginal = document.getElementById('corpo-tabela');
-            const linhas = Array.from(tabelaOriginal.querySelectorAll('tr'));
-            
-            if (linhas.length === 0 || (linhas[0] && linhas[0].innerText.includes("Nenhum registro"))) {
-                window.print();
-                return;
-            }
+            inputId.addEventListener('keydown', function(e) {
+                // Se for EDIÇÃO, libera a trava de prefixo
+                const ehEdicao = document.getElementById('edit-id').value !== '';
+                if(ehEdicao) return;
 
-            const htmlOriginal = tabelaOriginal.innerHTML;
-            const setores = {};
-            const totais = { 'OTIMO': 0, 'BOM': 0, 'MANUTENÇÃO': 0 };
-
-            // Agrupar por setor e contar situações para o resumo
-            linhas.forEach(linha => {
-                const idTexto = linha.cells[1].innerText;
-                const situacao = linha.cells[5].innerText.trim().toUpperCase();
-                const setor = idTexto.split('-')[0] || "DIVERSOS";
-                
-                if (!setores[setor]) setores[setor] = [];
-                setores[setor].push(linha.outerHTML);
-
-                if (totais.hasOwnProperty(situacao)) {
-                    totais[situacao]++;
+                const config = configuracaoSetores[setorAtivoParaDica] || { id: '' };
+                const prefixo = config.id;
+                if (e.key === 'Backspace' && this.value === prefixo) {
+                    e.preventDefault();
                 }
             });
 
-            // Reorganizar conteúdo para impressão por setor
-            let novoConteudo = "";
-            for (const setor in setores) {
-                novoConteudo += `
-                    <tr>
-                        <td colspan="8" class="titulo-setor-print">
-                            SETOR: ${setor} (${setores[setor].length} MÁQS)
-                        </td>
-                    </tr>${setores[setor].join('')}`;
-            }
+            inputId.addEventListener('input', function() {
+                const ehEdicao = document.getElementById('edit-id').value !== '';
+                if(ehEdicao) {
+                    this.value = this.value.toUpperCase();
+                    return;
+                }
 
-            // Inserir tabela de resumo no final
-            const totalGeral = totais['OTIMO'] + totais['BOM'] + totais['MANUTENÇÃO'];
-            const resumoHtml = `
-                <tr class="no-print-row"><td colspan="8" style="border:none !important; height: 15px;"></td></tr>
-                <tr>
-                    <td colspan="5" style="border:none !important;"></td>
-                    <td colspan="3" style="border:none !important; padding:0 !important;">
-                        <table class="table table-sm table-bordered tabela-resumo">
-                            <thead>
-                                <tr><th colspan="2" class="text-center">RESUMO GERAL</th></tr>
-                            </thead>
-                            <tbody>
-                                <tr><td>🟢 OTIMO</td><td class="text-center">${totais['OTIMO']}</td></tr>
-                                <tr><td>🟡 BOM</td><td class="text-center">${totais['BOM']}</td></tr>
-                                <tr><td>🔴 MANUTENÇÃO</td><td class="text-center">${totais['MANUTENÇÃO']}</td></tr>
-                                <tr class="fw-bold" style="background-color: #f8f9fa !important;">
-                                    <td>TOTAL GERAL</td><td class="text-center">${totalGeral}</td></tr>
-                            </tbody>
-                        </table>
-                    </td>
-                </tr>`;
-
-            tabelaOriginal.innerHTML = novoConteudo + resumoHtml;
-            
-            window.print();
-            
-            // Restaura o estado da tela
-            tabelaOriginal.innerHTML = htmlOriginal;
-        }
-
-        function filtrarTabela() {
-            const termo = document.getElementById('inputBusca').value.toLowerCase();
-            const filtrados = listaAtualComputadores.filter(i =>
-                i.usuario.toLowerCase().includes(termo) || 
-                i.identificacao.toLowerCase().includes(termo) ||
-                (i.ip_maquina && i.ip_maquina.includes(termo))
-            );
-            desenharLinhas(filtrados);
+                const config = configuracaoSetores[setorAtivoParaDica] || { id: '' };
+                const prefixo = config.id;
+                if (!this.value.startsWith(prefixo)) {
+                    this.value = prefixo + this.value.replace(prefixo, "");
+                }
+                this.value = this.value.toUpperCase();
+            });
         }
 
         document.getElementById('formCadastro').addEventListener('submit', async (e) => {
@@ -436,45 +449,73 @@
             };
             const res = await window.api.salvarComputador(dados);
             if (res.success) {
-                bootstrap.Modal.getInstance(document.getElementById('modalCadastro')).hide();
-                atualizarVisualizacao();
+                const modalInstance = bootstrap.Modal.getInstance(document.getElementById('modalCadastro'));
+                if(modalInstance) modalInstance.hide();
+                await atualizarVisualizacao();
             } else { alert("Erro ao salvar: " + res.error); }
         });
 
         async function excluir(id) {
             if (confirm('Excluir permanentemente?')) {
                 const res = await window.api.excluirComputador(id);
-                if (res.success) atualizarVisualizacao();
+                if (res.success) await atualizarVisualizacao();
             }
         }
 
-        function prepararEdicao(id) {
-            const item = listaAtualComputadores.find(c => c.id == id);
-            if(!item) return;
-            document.getElementById('edit-id').value = item.id;
-            document.getElementById('identificacao').value = item.identificacao;
-            document.getElementById('usuario').value = item.usuario;
-            document.getElementById('monitor_info').value = item.monitor_info;
-            document.getElementById('ip_maquina').value = item.ip_maquina;
-            document.getElementById('situacao').value = item.situacao;
-            document.getElementById('observacoes').value = item.observacoes;
-            document.getElementById('modalTitle').innerText = 'Editar Registro';
-            document.getElementById('modalHeader').className = 'modal-header bg-warning text-dark';
-            new bootstrap.Modal(document.getElementById('modalCadastro')).show();
+        function filtrarTabela() {
+            const termo = document.getElementById('inputBusca').value.toLowerCase();
+            const filtrados = listaAtualComputadores.filter(i =>
+                i.usuario.toLowerCase().includes(termo) || 
+                i.identificacao.toLowerCase().includes(termo) ||
+                (i.ip_maquina && i.ip_maquina.includes(termo))
+            );
+            desenharLinhas(filtrados);
         }
 
-        function abrirModalCadastro() {
-            document.getElementById('formCadastro').reset();
-            document.getElementById('edit-id').value = '';
-            document.getElementById('modalTitle').innerText = 'Novo Registro';
-            document.getElementById('modalHeader').className = 'modal-header bg-primary text-white';
-            const config = configuracaoSetores[setorAtivoParaDica] || { id: 'P1-XX', ip: '10.15.X.X' };
-            document.getElementById('identificacao').value = config.id.replace('XX', '');
-            document.getElementById('ip_maquina').value = config.ip.replace('X', '');
-            new bootstrap.Modal(document.getElementById('modalCadastro')).show();
-        }
+        function imprimirRelatorio() {
+            const agora = new Date();
+            document.getElementById('data-relatorio-texto').innerText = agora.toLocaleString('pt-BR');
+            const tabelaOriginal = document.getElementById('corpo-tabela');
+            const linhas = Array.from(tabelaOriginal.querySelectorAll('tr'));
+            if (linhas.length === 0 || (linhas[0] && linhas[0].innerText.includes("Nenhum registro"))) { window.print(); return; }
 
-        window.onload = renderizarTabela;
+            const htmlOriginal = tabelaOriginal.innerHTML;
+            const setores = {};
+            const totais = { 'OTIMO': 0, 'BOM': 0, 'MANUTENÇÃO': 0 };
+
+            linhas.forEach(linha => {
+                const idTexto = linha.cells[1].innerText;
+                const situacao = linha.cells[5].innerText.trim().toUpperCase();
+                const setor = idTexto.split('-')[0] || "DIVERSOS";
+                if (!setores[setor]) setores[setor] = [];
+                setores[setor].push(linha.outerHTML);
+                if (totais.hasOwnProperty(situacao)) totais[situacao]++;
+            });
+
+            let novoConteudo = "";
+            for (const setor in setores) {
+                novoConteudo += `<tr><td colspan="8" class="titulo-setor-print">SETOR: ${setor} (${setores[setor].length} MÁQS)</td></tr>${setores[setor].join('')}`;
+            }
+
+            const totalGeral = totais['OTIMO'] + totais['BOM'] + totais['MANUTENÇÃO'];
+            const resumoHtml = `
+                <tr class="no-print-row"><td colspan="8" style="border:none !important; height: 15px;"></td></tr>
+                <tr><td colspan="5" style="border:none !important;"></td><td colspan="3" style="border:none !important; padding:0 !important;">
+                    <table class="table table-sm table-bordered tabela-resumo">
+                        <thead><tr><th colspan="2" class="text-center">RESUMO GERAL</th></tr></thead>
+                        <tbody>
+                            <tr><td>🟢 OTIMO</td><td class="text-center">${totais['OTIMO']}</td></tr>
+                            <tr><td>🟡 BOM</td><td class="text-center">${totais['BOM']}</td></tr>
+                            <tr><td>🔴 MANUTENÇÃO</td><td class="text-center">${totais['MANUTENÇÃO']}</td></tr>
+                            <tr class="fw-bold" style="background-color: #f8f9fa !important;"><td>TOTAL GERAL</td><td class="text-center">${totalGeral}</td></tr>
+                        </tbody>
+                    </table>
+                </td></tr>`;
+
+            tabelaOriginal.innerHTML = novoConteudo + resumoHtml;
+            window.print();
+            tabelaOriginal.innerHTML = htmlOriginal;
+        }
     </script>
 </body>
 </html>
