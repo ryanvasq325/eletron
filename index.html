@@ -1,620 +1,1090 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle de TI - 4º BPM</title>
+    <title>NTI — Controle de TI · 4º BPM</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        .col-acoes { white-space: nowrap; width: 1%; }
-        .search-container { max-width: 300px; }
+        :root {
+            --cor-pcs:   #1a56db;
+            --cor-cmd:   #6d28d9;
+            --cor-sub:   #0891b2;
+            --cor-nti:   #047857;
+            --cor-manut: #dc2626;
 
-        .btn-setor {
-            min-width: 100px;
-            font-weight: bold;
-            border: 2px solid rgba(0, 0, 0, 0.2);
-            box-shadow: inset 2px 2px 5px rgba(255, 255, 255, 0.3), 2px 2px 5px rgba(0, 0, 0, 0.2);
-            transition: 0.2s;
-            text-transform: uppercase;
-            font-size: 0.85rem;
+            --bg-main:   #f0f4f8;
+            --bg-card:   #ffffff;
+            --bg-panel:  #ffffff;
+            --border:    #e2e8f0;
+            --text-main: #1e293b;
+            --text-muted:#64748b;
         }
 
-        .btn-setor:hover { transform: scale(1.05); filter: brightness(1.1); }
-        .btn-setor.active { border: 2px solid #000; transform: scale(1.05); box-shadow: 0 0 8px rgba(0,0,0,0.3); }
+        * { box-sizing: border-box; }
+        body {
+            background: var(--bg-main);
+            color: var(--text-main);
+            font-family: 'Barlow', sans-serif;
+            min-height: 100vh;
+        }
 
-        .borda-setor-nti, .borda-setor-p3 { border-left: 6px solid #0d6efd !important; }
-        .borda-setor-outros { border-left: 6px solid #dc3545 !important; }
-
-        .relatorio-header, .relatorio-footer { display: none; }
-
-        /* Loading overlay para PDF */
-        #pdf-loading {
-            display: none;
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6);
-            z-index: 9999;
-            justify-content: center;
+        /* ─── HEADER ──────────────────────────────────── */
+        .app-header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 28px;
+            display: flex;
             align-items: center;
-            flex-direction: column;
-            color: white;
+            gap: 18px;
+        }
+        .app-header .logo-badge {
+            width: 46px; height: 46px;
+            background: rgba(255,255,255,0.18);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 800; font-size: 1rem;
+            color: #fff; letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+        .app-header .header-text h1 {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 1.25rem; font-weight: 800;
+            letter-spacing: 1.5px; text-transform: uppercase;
+            margin: 0; line-height: 1.2; color: #fff;
+        }
+        .app-header .header-text small {
+            font-size: 0.72rem; color: rgba(255,255,255,0.65);
+            letter-spacing: 0.5px; text-transform: uppercase;
+        }
+        .app-header .header-meta {
+            margin-left: auto;
+            text-align: right;
+            font-size: 0.7rem; color: rgba(255,255,255,0.6);
+            letter-spacing: 0.5px;
+        }
+        .app-header .header-meta strong { color: #86efac; font-size: 0.78rem; }
+
+        /* ─── MAIN LAYOUT ─────────────────────────────── */
+        .app-body { padding: 20px 24px; max-width: 1400px; margin: 0 auto; }
+
+        /* ─── CONTROL PANEL ───────────────────────────── */
+        .control-panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+        }
+        .panel-title-bar {
+            background: #f8fafc;
+            border-bottom: 1px solid var(--border);
+            padding: 10px 18px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .panel-title-bar .dot { width:8px;height:8px;border-radius:50%; }
+        .panel-title-bar span {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 0.75rem; font-weight: 700;
+            letter-spacing: 2px; text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .sector-layer {
+            padding: 12px 18px;
+            display: flex; align-items: center; gap: 12px;
+            border-bottom: 1px solid var(--border);
+            background: #fff;
+        }
+        .sector-layer:last-child { border-bottom: none; }
+
+        .layer-label {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 0.65rem; font-weight: 800;
+            letter-spacing: 2.5px; text-transform: uppercase;
+            padding: 4px 10px;
+            border-radius: 4px;
+            width: 108px; flex-shrink: 0;
+            text-align: center;
+        }
+        .layer-label.pcs    { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+        .layer-label.cmd    { background: #faf5ff; color: #6d28d9; border: 1px solid #ddd6fe; }
+        .layer-label.sub    { background: #ecfeff; color: #0e7490; border: 1px solid #a5f3fc; }
+        .layer-label.city   { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+
+        .layer-divider {
+            width: 1px; height: 28px;
+            background: var(--border);
+            flex-shrink: 0;
+        }
+
+        .layer-btns {
+            display: flex; flex-wrap: wrap; gap: 7px;
+            flex: 1;
+        }
+
+        /* ─── SECTOR BUTTONS ──────────────────────────── */
+        .btn-sector {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 0.82rem; font-weight: 700;
+            letter-spacing: 1.5px; text-transform: uppercase;
+            padding: 6px 16px;
+            border-radius: 6px;
+            border: none; cursor: pointer;
+            transition: all 0.18s ease;
+            position: relative; overflow: hidden;
+            color: #fff;
+        }
+        .btn-sector::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: rgba(255,255,255,0);
+            transition: background 0.15s;
+        }
+        .btn-sector:hover::before { background: rgba(0,0,0,0.08); }
+        .btn-sector:hover { transform: translateY(-1px); }
+
+        .btn-sector.pcs   { background: var(--cor-pcs); box-shadow: 0 2px 8px rgba(26,86,219,0.22); }
+        .btn-sector.cmd   { background: var(--cor-cmd); box-shadow: 0 2px 8px rgba(109,40,217,0.22); }
+        .btn-sector.sub   { background: var(--cor-sub); box-shadow: 0 2px 8px rgba(8,145,178,0.22); }
+        .btn-sector.city  { background: linear-gradient(135deg, #16a34a, #15803d); box-shadow: 0 2px 8px rgba(22,163,74,0.22); }
+
+        .btn-sector.active {
+            outline: 2px solid rgba(0,0,0,0.25);
+            outline-offset: 2px;
+            transform: translateY(-1px) scale(1.04);
+        }
+        .btn-sector.pcs.active   { box-shadow: 0 4px 14px rgba(26,86,219,0.4); }
+        .btn-sector.cmd.active   { box-shadow: 0 4px 14px rgba(109,40,217,0.4); }
+        .btn-sector.sub.active   { box-shadow: 0 4px 14px rgba(8,145,178,0.4); }
+        .btn-sector.city.active  { box-shadow: 0 4px 14px rgba(22,163,74,0.4); }
+
+        /* ─── BOTTOM ACTION ROW ───────────────────────── */
+        .action-row {
+            padding: 10px 18px;
+            background: #f8fafc;
+            border-top: 1px solid var(--border);
+            display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+        }
+        .btn-action {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 0.8rem; font-weight: 700;
+            letter-spacing: 1.5px; text-transform: uppercase;
+            padding: 7px 20px;
+            border-radius: 6px;
+            border: none; cursor: pointer;
+            transition: all 0.18s ease;
+            color: #fff;
+        }
+        .btn-action.todos {
+            background: linear-gradient(135deg, #b45309, #92400e);
+            box-shadow: 0 2px 10px rgba(180,83,9,0.35);
+        }
+        .btn-action.manut {
+            background: linear-gradient(135deg, #dc2626, #991b1b);
+            box-shadow: 0 2px 10px rgba(220,38,38,0.35);
+        }
+        .btn-action:hover { filter: brightness(1.15); transform: translateY(-1px); }
+        .btn-action.active {
+            outline: 2px solid rgba(0,0,0,0.22); outline-offset: 2px;
+            transform: translateY(-1px) scale(1.04);
+        }
+
+        /* ─── TABLE CARD ──────────────────────────────── */
+        .table-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+        }
+        .table-card-header {
+            padding: 14px 20px;
+            display: flex; align-items: center; gap: 12px;
+            border-bottom: 1px solid var(--border);
+            background: #f8fafc;
+        }
+        .table-card-header .session-title {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 1rem; font-weight: 700;
+            letter-spacing: 1px; text-transform: uppercase;
+            color: var(--text-main);
+        }
+        .table-card-header .spacer { flex: 1; }
+        .btn-tool {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 0.75rem; font-weight: 700;
+            letter-spacing: 1px; text-transform: uppercase;
+            padding: 6px 14px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: #fff;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn-tool:hover { background: #f1f5f9; border-color: #cbd5e1; }
+        .btn-tool.danger { background: #fff5f5; border-color: #fecaca; color: #dc2626; }
+        .btn-tool.danger:hover { background: #fee2e2; }
+        .btn-tool.primary { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+        .btn-tool.primary:hover { background: #dbeafe; }
+
+        .search-input {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            color: var(--text-main);
+            outline: none;
+            width: 220px;
+            transition: border 0.15s;
+        }
+        .search-input::placeholder { color: var(--text-muted); }
+        .search-input:focus { border-color: #93c5fd; box-shadow: 0 0 0 3px rgba(59,130,246,0.12); }
+
+        /* ─── TABLE ───────────────────────────────────── */
+        .main-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .main-table thead tr { background: #f8fafc; }
+        .main-table thead th {
+            padding: 10px 14px;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 0.7rem; font-weight: 700;
+            letter-spacing: 2px; text-transform: uppercase;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+        .main-table tbody tr {
+            border-bottom: 1px solid #f1f5f9;
+            transition: background 0.12s;
+        }
+        .main-table tbody tr:hover { background: #f8fafc; }
+        .main-table tbody td {
+            padding: 10px 14px;
+            vertical-align: middle;
+            color: var(--text-main);
+        }
+        .main-table .num { color: var(--text-muted); font-size: 0.75rem; text-align: center; }
+        .main-table .id-cell {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 700; font-size: 0.95rem;
+            color: #1d4ed8; letter-spacing: 0.5px;
+        }
+        .main-table .monitor-cell { color: #dc2626; font-size: 0.8rem; font-weight: 600; }
+        .main-table .ip-cell { font-family: monospace; font-size: 0.8rem; color: #059669; }
+        .main-table .obs-cell { font-size: 0.78rem; color: var(--text-muted); }
+
+        /* Borda esquerda por setor */
+        .row-pcs   { border-left: 3px solid var(--cor-pcs); }
+        .row-cmd   { border-left: 3px solid var(--cor-cmd); }
+        .row-sub   { border-left: 3px solid var(--cor-sub); }
+        .row-nti   { border-left: 3px solid var(--cor-nti); }
+        .row-other { border-left: 3px solid #cbd5e1; }
+
+        /* ─── STATUS BADGES ───────────────────────────── */
+        .badge-status {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 0.72rem; font-weight: 700;
+            letter-spacing: 1.5px; text-transform: uppercase;
+            padding: 4px 10px; border-radius: 4px; white-space: nowrap;
+        }
+        .badge-otimo   { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .badge-bom     { background: #fef9c3; color: #854d0e; border: 1px solid #fde68a; }
+        .badge-manut   { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+
+        /* ─── ACTION BUTTONS IN TABLE ─────────────────── */
+        .btn-tbl {
+            padding: 5px 10px;
+            border-radius: 5px;
+            border: 1px solid var(--border); cursor: pointer;
+            font-size: 0.8rem; transition: all 0.12s;
+            background: #fff;
+            color: var(--text-main);
+        }
+        .btn-tbl:hover { background: #f1f5f9; }
+        .btn-tbl.edit:hover { background: #fef9c3; border-color: #fde68a; color: #854d0e; }
+        .btn-tbl.del:hover  { background: #fee2e2; border-color: #fecaca; color: #991b1b; }
+
+        /* ─── TABLE FOOTER ────────────────────────────── */
+        .table-footer {
+            padding: 10px 20px;
+            border-top: 1px solid var(--border);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            background: #f8fafc;
+            display: flex; align-items: center; gap: 14px;
+        }
+        .counter-chip {
+            background: #e2e8f0;
+            border-radius: 999px;
+            padding: 2px 10px;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        /* ─── MODAL ───────────────────────────────────── */
+        .modal-content {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            color: var(--text-main);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+        }
+        .modal-header {
+            border-bottom: 1px solid var(--border);
+            padding: 16px 20px;
+            background: #f8fafc;
+        }
+        .modal-title {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 1.1rem; font-weight: 800;
+            letter-spacing: 1px; text-transform: uppercase;
+        }
+        .modal-body { padding: 20px; }
+        .form-label {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 0.7rem; font-weight: 700;
+            letter-spacing: 2px; text-transform: uppercase;
+            color: var(--text-muted); margin-bottom: 5px;
+        }
+        .form-control, .form-select {
+            background: #fff;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            border-radius: 7px;
+            font-size: 0.875rem;
+        }
+        .form-control:focus, .form-select:focus {
+            background: #fff;
+            border-color: #93c5fd;
+            color: var(--text-main);
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+        }
+        .form-select option { background: #fff; }
+        .modal-footer { border-top: 1px solid var(--border); padding: 14px 20px; background: #f8fafc; }
+        .btn-modal-cancel {
+            background: #fff; border: 1px solid var(--border);
+            color: var(--text-muted); border-radius: 7px;
+            padding: 8px 18px; cursor: pointer;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 0.8rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+            transition: all 0.15s;
+        }
+        .btn-modal-cancel:hover { background: #f1f5f9; color: var(--text-main); }
+        .btn-modal-save {
+            background: linear-gradient(135deg, #047857, #065f46);
+            border: none; color: #fff; border-radius: 7px;
+            padding: 8px 22px; cursor: pointer;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 0.8rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+            box-shadow: 0 2px 10px rgba(4,120,87,0.4);
+            transition: all 0.15s;
+        }
+        .btn-modal-save:hover { filter: brightness(1.15); }
+        .btn-modal-save.edit-mode {
+            background: linear-gradient(135deg, #b45309, #92400e);
+            box-shadow: 0 2px 10px rgba(180,83,9,0.4);
+        }
+        .btn-close { filter: none; }
+
+        /* ─── EMPTY STATE ─────────────────────────────── */
+        .empty-state {
+            text-align: center; padding: 48px 20px;
+            color: var(--text-muted);
+        }
+        .empty-state .icon { font-size: 2.5rem; margin-bottom: 12px; }
+        .empty-state p { font-size: 0.875rem; margin: 0; }
+
+        /* ─── LOADING OVERLAY ─────────────────────────── */
+        #pdf-loading {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.75); z-index: 9999;
+            justify-content: center; align-items: center;
+            flex-direction: column; color: white; gap: 14px;
         }
         #pdf-loading.ativo { display: flex; }
+        #pdf-loading p {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 1rem; letter-spacing: 2px; text-transform: uppercase;
+        }
+
+        /* ─── PRINT STYLES ────────────────────────────── */
+        .relatorio-header, .relatorio-footer { display: none; }
+
+        /* Estilos usados apenas no PDF/impressão */
+        .rh-topo {
+            display: flex; align-items: center; gap: 18px;
+            border-bottom: 3px solid #1e3a8a;
+            padding-bottom: 12px; margin-bottom: 14px;
+        }
+        .rh-brasao {
+            width: 64px; height: 64px; flex-shrink: 0;
+            background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-weight: 900; font-size: 1rem;
+            letter-spacing: 1px; font-family: 'Barlow Condensed', sans-serif;
+        }
+        .rh-texto { flex: 1; text-align: center; }
+        .rh-texto .rh-gov   { font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase; color: #475569; margin: 0; }
+        .rh-texto .rh-org   { font-size: 0.85rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #1e293b; margin: 0; }
+        .rh-texto .rh-uni   { font-size: 0.75rem; color: #475569; margin: 0; }
+        .rh-texto .rh-doc   { display: inline-block; margin-top: 6px; font-size: 0.8rem; font-weight: 800;
+                               letter-spacing: 2px; text-transform: uppercase; color: #1e3a8a;
+                               border-top: 1px solid #bfdbfe; border-bottom: 1px solid #bfdbfe;
+                               padding: 3px 14px; }
+        .rh-meta { text-align: right; font-size: 0.65rem; color: #64748b; flex-shrink: 0; }
+        .rh-meta strong { display: block; font-size: 0.7rem; color: #1e293b; }
+
+        .rpt-setor-header {
+            background: #1e3a8a !important;
+            color: #fff !important;
+            font-weight: 700;
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            padding: 5px 10px !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .rpt-zebra { background: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+        .rpt-badge-otimo  { background: #dcfce7 !important; color: #166534 !important; border-radius: 3px; padding: 1px 6px; font-size: 0.7rem; font-weight: 700; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .rpt-badge-bom    { background: #fef9c3 !important; color: #854d0e !important; border-radius: 3px; padding: 1px 6px; font-size: 0.7rem; font-weight: 700; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .rpt-badge-manut  { background: #fee2e2 !important; color: #991b1b !important; border-radius: 3px; padding: 1px 6px; font-size: 0.7rem; font-weight: 700; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+        .rpt-resumo-wrap { margin-top: 20px; display: flex; justify-content: flex-end; }
+        .rpt-resumo {
+            width: 280px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            overflow: hidden;
+            font-size: 0.78rem;
+        }
+        .rpt-resumo-title {
+            background: #1e3a8a !important; color: #fff !important;
+            text-align: center; font-weight: 700; font-size: 0.72rem;
+            letter-spacing: 2px; text-transform: uppercase; padding: 5px;
+            -webkit-print-color-adjust: exact; print-color-adjust: exact;
+        }
+        .rpt-resumo-row { display: flex; justify-content: space-between; padding: 4px 10px; border-bottom: 1px solid #f1f5f9; }
+        .rpt-resumo-row.total { background: #f8fafc !important; font-weight: 700; border-bottom: none; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+        .rpt-footer-wrap {
+            margin-top: 32px;
+            border-top: 2px solid #1e3a8a;
+            padding-top: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+        .rpt-footer-left { font-size: 0.65rem; color: #64748b; }
+        .rpt-footer-left strong { display: block; color: #1e293b; font-size: 0.7rem; }
+        .rpt-assinatura { text-align: center; }
+        .rpt-assinatura .linha { border-top: 1px solid #1e293b; width: 220px; margin: 0 auto 4px; }
+        .rpt-assinatura p { margin: 0; font-size: 0.68rem; color: #1e293b; font-weight: 700; letter-spacing: 0.5px; }
+        .rpt-assinatura small { font-size: 0.62rem; color: #64748b; }
+        .rpt-assinaturas { display: flex; gap: 40px; }
 
         @media print {
-            @page { 
-                size: landscape; 
-                margin: 1cm; 
-            }
-            
-            body { 
-                background-color: white !important; 
-                color: black !important; 
-                font-size: 9pt; 
-            }
-
-            .no-print, .btn, .search-container, .card-header, .card-footer, 
-            #container-botoes, .modal, .col-acoes, .btn-close, .badge-input { 
-                display: none !important; 
-            }
-
-            .container-fluid { padding: 0 !important; margin: 0 !important; width: 100% !important; }
-            .card { border: none !important; box-shadow: none !important; }
-            
-            .relatorio-header { 
-                display: flex !important; 
-                flex-direction: column;
-                align-items: center;
-                text-align: center; 
-                margin-bottom: 20px; 
-                border-bottom: 2px solid #000;
-                padding-bottom: 10px;
-            }
-
-            table { 
-                width: 100% !important; 
-                border-collapse: collapse !important; 
-                table-layout: fixed !important; 
-            }
-            
-            th, td { 
-                border: 1px solid #000 !important; 
-                padding: 4px !important; 
-            }
-
-            .titulo-setor-print {
-                background-color: #f0f0f0 !important;
-                font-weight: bold;
-                text-align: center;
-                text-transform: uppercase;
-                font-size: 10pt;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-
-            .tabela-resumo {
-                width: 280px !important;
-                margin-top: 15px;
-                margin-left: auto;
-                page-break-inside: avoid;
-            }
-            .tabela-resumo th { background-color: #eee !important; font-weight: bold; }
-
-            .relatorio-footer { 
-                display: block !important; 
-                margin-top: 30px; 
-                page-break-inside: avoid; 
-            }
-            .assinatura-box {
-                border-top: 1px solid #000;
-                width: 280px;
-                text-align: center;
-                padding-top: 5px;
-                margin: 0 40px;
-            }
+            @page { size: landscape; margin: 1.2cm 1cm; }
+            body { background: white !important; color: black !important; font-size: 9pt; font-family: 'Barlow', Arial, sans-serif; }
+            .no-print, .btn-tool, .btn-tbl, .search-input, .control-panel, .app-header,
+            .table-card-header, .table-footer { display: none !important; }
+            .relatorio-header { display: block !important; margin-bottom: 12px; }
+            .table-card { border: none !important; background: white !important; box-shadow: none !important; }
+            .app-body { padding: 0 !important; }
+            .main-table { width: 100% !important; border-collapse: collapse !important; }
+            .main-table th { background: #1e3a8a !important; color: #fff !important; padding: 5px 8px !important;
+                              font-size: 0.68rem; letter-spacing: 1.5px; text-transform: uppercase;
+                              -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .main-table td { border: 1px solid #e2e8f0 !important; padding: 5px 8px !important; color: #1e293b !important; font-size: 0.78rem; }
+            .relatorio-footer { display: block !important; }
         }
     </style>
 </head>
+<body>
 
-<body class="bg-light">
+<!-- PDF Loading overlay -->
+<div id="pdf-loading">
+    <div class="spinner-border text-light" style="width:2.5rem;height:2.5rem;"></div>
+    <p>Gerando PDF, aguarde...</p>
+</div>
 
-    <!-- Loading overlay PDF -->
-    <div id="pdf-loading">
-        <div class="spinner-border text-light mb-3" style="width:3rem;height:3rem;"></div>
-        <h5>Gerando PDF, aguarde...</h5>
+<!-- ─── HEADER ──────────────────────────────── -->
+<header class="app-header no-print">
+    <div class="logo-badge">NTI</div>
+    <div class="header-text">
+        <h1>Controle de TI · 4º BPM</h1>
+        <small>Batalhão de Polícia Militar — Cacoal / RO</small>
+    </div>
+    <div class="header-meta">
+        <strong id="clock">--:--:--</strong><br>
+        <span id="date-display"></span>
+    </div>
+</header>
+
+<div class="app-body">
+
+    <!-- ─── REPORT HEADER (print only) ──────── -->
+    <div class="relatorio-header" id="relatorio-header">
+        <div class="rh-topo">
+            <div class="rh-brasao">NTI</div>
+            <div class="rh-texto">
+                <p class="rh-gov">Governo do Estado de Rondônia</p>
+                <p class="rh-org">Polícia Militar do Estado de Rondônia</p>
+                <p class="rh-uni">4º Batalhão de Polícia Militar — Cacoal / RO</p>
+                <span class="rh-doc">Inventário e Controle de Equipamentos de TI</span>
+            </div>
+            <div class="rh-meta">
+                <strong id="rh-filtro-texto">Visão Geral</strong>
+                Gerado em:<br>
+                <span id="data-relatorio-texto"></span>
+            </div>
+        </div>
     </div>
 
-    <div class="container-fluid mt-4">
-        <div class="relatorio-header" id="relatorio-header">
-            <h5 class="mb-0">GOVERNO DO ESTADO DE RONDÔNIA</h5>
-            <h5 class="mb-0">POLÍCIA MILITAR DO ESTADO DE RONDÔNIA</h5>
-            <h6 class="mb-0">4º BATALHÃO DE POLÍCIA MILITAR - CACOAL (RO)</h6>
-            <h6 class="mt-2 fw-bold text-decoration-underline">INVENTÁRIO E CONTROLE DE EQUIPAMENTOS DE TI</h6>
-            <small class="mt-1">Relatório gerado em: <span id="data-relatorio-texto"></span></small>
+    <!-- ─── CONTROL PANEL ────────────────────── -->
+    <div class="control-panel no-print">
+        <div class="panel-title-bar">
+            <div class="dot" style="background:#ef4444;"></div>
+            <div class="dot" style="background:#f59e0b;"></div>
+            <div class="dot" style="background:#22c55e;"></div>
+            <span style="margin-left:6px;">Painel de Setores — 4º BPM</span>
         </div>
 
-        <div class="card shadow mb-4 no-print border-success">
-            <div class="card-header bg-success text-white text-center py-1">
-                <h6 class="mb-0 fw-bold">PAINEL DE CONTROLE - NTI 4º BPM</h6>
+        <!-- Camada PCS -->
+        <div class="sector-layer">
+            <span class="layer-label pcs">PCS</span>
+            <div class="layer-divider"></div>
+            <div class="layer-btns">
+                <button class="btn-sector pcs" onclick="filtrarPorSetor('P-1', this)">P-1</button>
+                <button class="btn-sector pcs" onclick="filtrarPorSetor('P-2', this)">P-2</button>
+                <button class="btn-sector pcs" onclick="filtrarPorSetor('P-3', this)">P-3</button>
+                <button class="btn-sector pcs" onclick="filtrarPorSetor('P-4', this)">P-4</button>
+                <button class="btn-sector pcs" onclick="filtrarPorSetor('P-5', this)">P-5</button>
+                <button class="btn-sector pcs" onclick="filtrarPorSetor('P-6', this)">P-6</button>
+                <button class="btn-sector pcs" onclick="filtrarPorSetor('NTI', this)">NTI</button>
             </div>
-            <div class="card-body bg-white text-center">
-                <div class="d-flex flex-wrap gap-2 justify-content-center" id="container-botoes">
-                    <button class="btn btn-danger btn-setor" onclick="filtrarPorSetor('P-1', this)">P-1</button>
-                    <button class="btn btn-danger btn-setor" onclick="filtrarPorSetor('P-2', this)">P-2</button>
-                    <button class="btn btn-primary btn-setor" onclick="filtrarPorSetor('P-3', this)">P-3</button>
-                    <button class="btn btn-danger btn-setor" onclick="filtrarPorSetor('P-4', this)">P-4</button>
-                    <button class="btn btn-danger btn-setor" onclick="filtrarPorSetor('P-5', this)">P-5</button>
-                    <button class="btn btn-danger btn-setor" onclick="filtrarPorSetor('P-6', this)">P-6</button>
-                    <button class="btn btn-danger btn-setor" onclick="filtrarPorSetor('CMD', this)">CMD</button>
-                    <button class="btn btn-danger btn-setor" onclick="filtrarPorSetor('SUB CMD', this)">SUB CMD</button>
-                    <button class="btn btn-danger btn-setor" onclick="filtrarPorSetor('CIA', this)">CIA</button>
-                    <button class="btn btn-danger btn-setor" onclick="filtrarPorSetor('NTI', this)">NTI</button>
-                    
-                    <div class="w-100 mt-2 border-top pt-2"></div>
-                    <button class="btn btn-warning btn-setor text-dark active" style="width: 200px" onclick="renderizarTabela(this)">VER TODOS</button>
-                    <button class="btn btn-outline-danger btn-setor" style="width: 200px" onclick="filtrarManutencao(this)">🛠️ MANUTENÇÃO</button>
+        </div>
+
+        <!-- Camada 1ª CIA -->
+        <div class="sector-layer">
+            <span class="layer-label cmd">1ª Cia</span>
+            <div class="layer-divider"></div>
+            <div class="layer-btns">
+                <button class="btn-sector cmd" onclick="filtrarPorSetor('1CIA-P1', this)">P-1</button>
+                <button class="btn-sector cmd" onclick="filtrarPorSetor('1CIA-P2', this)">P-2</button>
+                <button class="btn-sector cmd" onclick="filtrarPorSetor('1CIA-P3', this)">P-3</button>
+                <button class="btn-sector cmd" onclick="filtrarPorSetor('1CIA-P4', this)">P-4</button>
+                <button class="btn-sector cmd" onclick="filtrarPorSetor('1CIA-P5', this)">P-5</button>
+                <button class="btn-sector cmd" onclick="filtrarPorSetor('1CIA-P6', this)">P-6</button>
+                <button class="btn-sector cmd" onclick="filtrarPorSetor('1CIA-NTI', this)">NTI</button>
+            </div>
+        </div>
+
+        <!-- Camada 2ª CIA -->
+        <div class="sector-layer">
+            <span class="layer-label sub">2ª Cia</span>
+            <div class="layer-divider"></div>
+            <div class="layer-btns">
+                <button class="btn-sector sub" onclick="filtrarPorSetor('2CIA-P1', this)">P-1</button>
+                <button class="btn-sector sub" onclick="filtrarPorSetor('2CIA-P2', this)">P-2</button>
+                <button class="btn-sector sub" onclick="filtrarPorSetor('2CIA-P3', this)">P-3</button>
+                <button class="btn-sector sub" onclick="filtrarPorSetor('2CIA-P4', this)">P-4</button>
+                <button class="btn-sector sub" onclick="filtrarPorSetor('2CIA-P5', this)">P-5</button>
+                <button class="btn-sector sub" onclick="filtrarPorSetor('2CIA-P6', this)">P-6</button>
+                <button class="btn-sector sub" onclick="filtrarPorSetor('2CIA-NTI', this)">NTI</button>
+            </div>
+        </div>
+
+        <!-- Cidades -->
+        <div class="sector-layer" style="background:#f5f7ff;">
+            <span class="layer-label city">Cidades</span>
+            <div class="layer-divider"></div>
+            <div class="layer-btns">
+                <button class="btn-sector city" onclick="filtrarPorCidade('PB', 'Pimenta Bueno', this)">📍 Pimenta Bueno</button>
+                <button class="btn-sector city" onclick="filtrarPorCidade('ESP', 'Espigão', this)">📍 Espigão</button>
+                <button class="btn-sector city" onclick="filtrarPorCidade('PAR', 'Parecis', this)">📍 Parecis</button>
+            </div>
+        </div>
+
+        <!-- Ações rápidas -->
+        <div class="action-row">
+            <button class="btn-action todos active" onclick="renderizarTabela(this)">⊞ Ver Todos</button>
+            <button class="btn-action manut" onclick="filtrarManutencao(this)">🛠 Manutenção</button>
+        </div>
+    </div>
+
+    <!-- ─── TABLE CARD ────────────────────────── -->
+    <div class="table-card">
+        <div class="table-card-header no-print">
+            <span class="session-title" id="titulo-sessao">Visão Geral</span>
+            <div class="spacer"></div>
+            <input type="text" class="search-input" id="inputBusca" placeholder="🔍 Buscar usuário, ID, IP..." onkeyup="filtrarTabela()">
+            <button class="btn-tool" onclick="imprimirRelatorio()">🖨 Imprimir</button>
+            <button class="btn-tool danger" onclick="salvarPDF()">📄 PDF</button>
+            <button class="btn-tool primary" id="btnNovoRegistro" onclick="abrirModalCadastro()">+ Novo Registro</button>
+        </div>
+
+        <div class="table-responsive">
+            <table class="main-table" id="tabela-principal">
+                <thead>
+                    <tr>
+                        <th style="width:44px">#</th>
+                        <th style="width:10%">Identificação</th>
+                        <th style="width:20%">Usuário</th>
+                        <th style="width:16%">Monitor / Tombamento</th>
+                        <th style="width:11%">Endereço IP</th>
+                        <th style="width:10%">Situação</th>
+                        <th>Observações</th>
+                        <th class="no-print" style="width:90px;text-align:center;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="corpo-tabela">
+                    <tr><td colspan="8"><div class="empty-state"><div class="icon">⌛</div><p>Carregando registros...</p></div></td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Footer impressão -->
+        <div class="relatorio-footer" id="relatorio-footer">
+            <div class="rpt-resumo-wrap" id="rpt-resumo-container"></div>
+            <div class="rpt-footer-wrap">
+                <div class="rpt-footer-left">
+                    <strong>4º Batalhão de Polícia Militar</strong>
+                    Seção de Informática — NTI<br>
+                    Cacoal / RO
                 </div>
-            </div>
-        </div>
-
-        <div class="card shadow">
-            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3 no-print">
-                <h5 class="mb-0" id="titulo-sessao">Controle de Máquinas - Geral</h5>
-                <div class="d-flex gap-2 align-items-center">
-                    <input type="text" id="inputBusca" class="form-control form-control-sm search-container" placeholder="🔍 Buscar usuário ou ID..." onkeyup="filtrarTabela()">
-                    <!-- Botão dropdown com opções de impressão/PDF -->
-                    <div class="btn-group">
-                        <button class="btn btn-sm btn-light border" onclick="imprimirRelatorio()">🖨️ Imprimir</button>
-                        <button class="btn btn-sm btn-danger" onclick="salvarPDF()" title="Salvar como PDF">📄 PDF</button>
+                <div class="rpt-assinaturas">
+                    <div class="rpt-assinatura">
+                        <div class="linha"></div>
+                        <p>Responsável Técnico</p>
+                        <small>Seção de Informática — 4º BPM</small>
                     </div>
-                    <button id="btnNovoRegistro" class="btn btn-sm btn-primary" onclick="abrirModalCadastro()">+ Novo</button>
-                </div>
-            </div>
-
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-bordered table-hover mb-0" id="tabela-principal">
-                        <thead class="table-secondary text-center text-uppercase">
-                            <tr>
-                                <th style="width: 40px">#</th>
-                                <th style="width: 10%">Identificação</th>
-                                <th style="width: 20%">Usuário</th>
-                                <th style="width: 15%">Monitor</th>
-                                <th style="width: 12%">IP</th>
-                                <th style="width: 10%">Situação</th>
-                                <th style="width: 33%">Observações</th>
-                                <th class="no-print">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="corpo-tabela"></tbody>
-                    </table>
-                </div>
-
-                <div class="relatorio-footer" id="relatorio-footer">
-                    <div class="d-flex justify-content-center">
-                        <div class="assinatura-box">
-                            <small class="fw-bold">Responsável Técnico</small><br>
-                            <small>Seção de Informática - 4º BPM</small>
-                        </div>
-                        <div class="assinatura-box">
-                            <small class="fw-bold">Comandante / Chefe</small><br>
-                            <small>Visto e Ciência</small>
-                        </div>
+                    <div class="rpt-assinatura">
+                        <div class="linha"></div>
+                        <p>Comandante / Chefe</p>
+                        <small>Visto e Ciência</small>
                     </div>
                 </div>
             </div>
-            <div class="card-footer bg-white py-2 no-print text-end">
-                <small class="text-muted" id="contador-registros">Aguardando...</small>
+        </div>
+
+        <div class="table-footer no-print">
+            <span id="contador-registros" class="counter-chip">Aguardando...</span>
+        </div>
+    </div>
+</div>
+
+<!-- ─── MODAL CADASTRO ────────────────────────── -->
+<div class="modal fade" id="modalCadastro" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" id="modalHeader">
+                <span class="modal-title" id="modalTitle">Novo Registro</span>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formCadastro" class="row g-3">
+                    <input type="hidden" id="edit-id">
+                    <div class="col-md-4">
+                        <label class="form-label">Identificação</label>
+                        <input type="text" class="form-control" id="identificacao" placeholder="P1-XX" required>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label">Usuário / Graduação</label>
+                        <input type="text" class="form-control" id="usuario" placeholder="SGT PM FULANO" required oninput="this.value = this.value.toUpperCase()">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Monitor e Tombamento</label>
+                        <textarea class="form-control" id="monitor_info" rows="2" oninput="this.value = this.value.toUpperCase()"></textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Endereço IP</label>
+                        <input type="text" class="form-control" id="ip_maquina" placeholder="10.15.X.X">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Situação</label>
+                        <select class="form-select" id="situacao">
+                            <option value="OTIMO">OTIMO</option>
+                            <option value="BOM">BOM</option>
+                            <option value="MANUTENÇÃO">MANUTENÇÃO</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Observações Técnicas</label>
+                        <textarea class="form-control" id="observacoes" rows="2" oninput="this.value = this.value.toUpperCase()"></textarea>
+                    </div>
+                    <div class="modal-footer px-0 pb-0">
+                        <button type="button" class="btn-modal-cancel" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn-modal-save" id="btnSalvar">Salvar no Banco</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
+</div>
 
-    <div class="modal fade" id="modalCadastro" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white" id="modalHeader">
-                    <h5 class="modal-title" id="modalTitle">Equipamento</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="formCadastro" class="row g-3">
-                        <input type="hidden" id="edit-id">
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold">Identificação</label>
-                            <input type="text" class="form-control" id="identificacao" placeholder="P1-XX" required>
-                        </div>
-                        <div class="col-md-8">
-                            <label class="form-label fw-bold">Usuário / Graduação</label>
-                            <input type="text" class="form-control" id="usuario" placeholder="Ex: SGT PM FULANO" required oninput="this.value = this.value.toUpperCase()">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Monitor e Tombamento</label>
-                            <textarea class="form-control text-danger fw-bold" id="monitor_info" rows="2" oninput="this.value = this.value.toUpperCase()"></textarea>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Endereço IP</label>
-                            <input type="text" class="form-control" id="ip_maquina" placeholder="Ex: 10.15.X.X">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold">Situação</label>
-                            <select class="form-select" id="situacao">
-                                <option value="OTIMO">OTIMO</option>
-                                <option value="BOM">BOM</option>
-                                <option value="MANUTENÇÃO">MANUTENÇÃO</option>
-                            </select>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label fw-bold">Observações Técnicas</label>
-                            <textarea class="form-control" id="observacoes" rows="2" oninput="this.value = this.value.toUpperCase()"></textarea>
-                        </div>
-                        <div class="modal-footer px-0 pb-0">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                            <button type="submit" class="btn btn-success" id="btnSalvar">Salvar no Banco</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+    let listaAtualComputadores = [];
+    let setorAtivoParaDica = 'NTI';
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- html2pdf para salvar PDF diretamente -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script>
-        let listaAtualComputadores = [];
-        let setorAtivoParaDica = 'NTI';
+    const configuracaoSetores = {
+        // PCS
+        'P-1': { id: 'P1-' }, 'P-2': { id: 'P2-' },
+        'P-3': { id: 'P3-' }, 'P-4': { id: 'P4-' },
+        'P-5': { id: 'P5-' }, 'P-6': { id: 'P6-' },
+        'NTI': { id: 'NTI-' }, 'CIA': { id: 'CIA-' },
+        'CMD': { id: 'CMD-' }, 'SUB CMD': { id: 'SUB-' },
+        // 1ª CIA
+        '1CIA-P1': { id: '1CIA-P1-' }, '1CIA-P2': { id: '1CIA-P2-' },
+        '1CIA-P3': { id: '1CIA-P3-' }, '1CIA-P4': { id: '1CIA-P4-' },
+        '1CIA-P5': { id: '1CIA-P5-' }, '1CIA-P6': { id: '1CIA-P6-' },
+        '1CIA-NTI': { id: '1CIA-NTI-' },
+        // 2ª CIA
+        '2CIA-P1': { id: '2CIA-P1-' }, '2CIA-P2': { id: '2CIA-P2-' },
+        '2CIA-P3': { id: '2CIA-P3-' }, '2CIA-P4': { id: '2CIA-P4-' },
+        '2CIA-P5': { id: '2CIA-P5-' }, '2CIA-P6': { id: '2CIA-P6-' },
+        '2CIA-NTI': { id: '2CIA-NTI-' },
+        // Cidades
+        'PIMENTA BUENO': { id: 'PB-' },
+        'ESPIGÃO':       { id: 'ESP-' },
+        'PARECIS':       { id: 'PAR-' }
+    };
 
-        const configuracaoSetores = {
-            'P-1': { id: 'P1-' }, 
-            'P-2': { id: 'P2-' },
-            'P-3': { id: 'P3-' }, 
-            'P-4': { id: 'P4-' },
-            'P-5': { id: 'P5-' }, 
-            'P-6': { id: 'P6-' },
-            'CMD': { id: 'CMD-' }, 
-            'SUB CMD': { id: 'SUB-' },
-            'NTI': { id: 'NTI-' },
-            'CIA': { id: 'CIA-' }
+    // ── CLOCK ──────────────────────────────────────
+    function updateClock() {
+        const now = new Date();
+        document.getElementById('clock').innerText = now.toLocaleTimeString('pt-BR');
+        document.getElementById('date-display').innerText = now.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // ── INIT ───────────────────────────────────────
+    window.onload = async () => {
+        await renderizarTabela();
+        configurarMonitorDePrefixo();
+    };
+
+    function marcarAtivo(elemento) {
+        document.querySelectorAll('.btn-sector, .btn-action').forEach(b => b.classList.remove('active'));
+        if (elemento) {
+            elemento.classList.add('active');
+            const btnNovo = document.getElementById('btnNovoRegistro');
+            const texto = elemento.innerText.toUpperCase();
+            btnNovo.style.display = (texto.includes("VER TODOS") || texto.includes("MANUTENÇÃO")) ? 'none' : 'inline-block';
+        }
+    }
+
+    async function atualizarVisualizacao() {
+        const btnAtivo = document.querySelector('.btn-sector.active, .btn-action.active');
+        if (btnAtivo) {
+            const texto = btnAtivo.innerText.toUpperCase();
+            if (texto.includes("VER TODOS") || texto.includes("⊞")) await renderizarTabela(btnAtivo);
+            else if (texto.includes("MANUTENÇÃO") || texto.includes("🛠")) await filtrarManutencao(btnAtivo);
+            else await filtrarPorSetor(setorAtivoParaDica, btnAtivo);
+        } else await renderizarTabela();
+    }
+
+    async function renderizarTabela(btn) {
+        const btnTodos = btn || document.querySelector('.btn-action.todos');
+        if (btnTodos) marcarAtivo(btnTodos);
+        document.getElementById('titulo-sessao').innerText = "Visão Geral";
+        try {
+            const response = await window.api.getComputadores();
+            listaAtualComputadores = response || [];
+            desenharLinhas(listaAtualComputadores);
+        } catch (error) { console.error("Erro:", error); }
+    }
+
+    async function filtrarPorSetor(prefixo, btn) {
+        marcarAtivo(btn);
+        setorAtivoParaDica = prefixo;
+        document.getElementById('titulo-sessao').innerText = `Setor: ${prefixo}`;
+        const setorParaView = prefixo.replace(/[\.\s-]/g, '').toLowerCase();
+        try {
+            const filtrados = await window.api.getComputadoresPorSetor(setorParaView);
+            const todos = await window.api.getComputadores();
+            listaAtualComputadores = todos || [];
+            desenharLinhas(filtrados);
+        } catch (error) { console.error("Erro no filtro:", error); }
+    }
+
+    async function filtrarManutencao(btn) {
+        marcarAtivo(btn);
+        document.getElementById('titulo-sessao').innerText = "Equipamentos em Manutenção";
+        try {
+            // Busca manutenção nas 3 tabelas (PCS, 1ª CIA, 2ª CIA)
+            const [r1, r2, r3] = await Promise.all([
+                window.api.getComputadoresPorSetor('ti_manutencao'),
+                window.api.getComputadoresPorSetor('1cia_ti_manutencao'),
+                window.api.getComputadoresPorSetor('2cia_ti_manutencao'),
+            ]);
+            const filtrados = [...(r1 || []), ...(r2 || []), ...(r3 || [])];
+            const todos = await window.api.getComputadores();
+            listaAtualComputadores = todos || [];
+            desenharLinhas(filtrados);
+        } catch (e) { console.error(e); }
+    }
+
+    async function filtrarPorCidade(prefixo, nome, btn) {
+        marcarAtivo(btn);
+        setorAtivoParaDica = prefixo;
+        document.getElementById('titulo-sessao').innerText = `Cidade: ${nome}`;
+        try {
+            const filtrados = await window.api.getComputadoresPorCidade(prefixo);
+            const todos = await window.api.getComputadores();
+            listaAtualComputadores = todos || [];
+            desenharLinhas(filtrados);
+        } catch (e) { console.error(e); }
+    }
+
+    function getRowClass(id) {
+        const up = (id || '').toUpperCase();
+        if (up.startsWith('1CIA')) return 'row-cmd';
+        if (up.startsWith('2CIA')) return 'row-sub';
+        if (up.startsWith('NTI') || up.startsWith('P3')) return 'row-nti';
+        if (up.startsWith('P')) return 'row-pcs';
+        if (up.startsWith('CMD')) return 'row-cmd';
+        if (up.startsWith('SUB')) return 'row-sub';
+        return 'row-other';
+    }
+
+    function desenharLinhas(dados) {
+        const corpo = document.getElementById('corpo-tabela');
+        document.getElementById('contador-registros').innerText = `${dados.length} registro(s)`;
+
+        if (dados.length === 0) {
+            corpo.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="icon">🗂️</div><p>Nenhum registro encontrado.</p></div></td></tr>`;
+            return;
+        }
+
+        corpo.innerHTML = dados.map((item, index) => {
+            const badgeClass = item.situacao === 'OTIMO' ? 'badge-otimo' : item.situacao === 'BOM' ? 'badge-bom' : 'badge-manut';
+            const rowClass = getRowClass(item.identificacao);
+            return `<tr class="${rowClass}">
+                <td class="num">${index + 1}</td>
+                <td class="id-cell">${item.identificacao}</td>
+                <td>${item.usuario}</td>
+                <td class="monitor-cell">${item.monitor_info || '—'}</td>
+                <td class="ip-cell">${item.ip_maquina || '—'}</td>
+                <td style="text-align:center;">
+                    <span class="badge-status ${badgeClass} badge-input">${item.situacao}</span>
+                    <span class="d-none d-print-block">${item.situacao}</span>
+                </td>
+                <td class="obs-cell">${item.observacoes || '—'}</td>
+                <td class="no-print" style="text-align:center; white-space:nowrap;">
+                    <button class="btn-tbl edit" onclick="prepararEdicao(${item.id})" title="Editar">✏️</button>
+                    <button class="btn-tbl del" onclick="excluir(${item.id})" title="Excluir">🗑️</button>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    async function prepararEdicao(id) {
+        const item = listaAtualComputadores.find(c => c.id == id);
+        if (!item) return;
+
+        document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.paddingRight = '0';
+
+        document.getElementById('edit-id').value = item.id;
+        document.getElementById('identificacao').value = item.identificacao;
+        document.getElementById('usuario').value = item.usuario;
+        document.getElementById('monitor_info').value = item.monitor_info;
+        document.getElementById('ip_maquina').value = item.ip_maquina || '';
+        document.getElementById('situacao').value = item.situacao;
+        document.getElementById('observacoes').value = item.observacoes;
+
+        document.getElementById('modalTitle').innerText = 'Editar Registro';
+        document.getElementById('btnSalvar').className = 'btn-modal-save edit-mode';
+        document.getElementById('btnSalvar').innerText = 'Atualizar Registro';
+
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalCadastro')).show();
+    }
+
+    function abrirModalCadastro() {
+        document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+        document.getElementById('formCadastro').reset();
+        document.getElementById('edit-id').value = '';
+
+        document.getElementById('modalTitle').innerText = 'Novo Registro';
+        document.getElementById('btnSalvar').className = 'btn-modal-save';
+        document.getElementById('btnSalvar').innerText = 'Salvar no Banco';
+
+        const config = configuracaoSetores[setorAtivoParaDica] || { id: '' };
+        const inputId = document.getElementById('identificacao');
+        inputId.value = config.id;
+
+        const modalEl = document.getElementById('modalCadastro');
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        modalEl.addEventListener('shown.bs.modal', () => {
+            inputId.focus();
+            const v = inputId.value; inputId.value = ''; inputId.value = v;
+        }, { once: true });
+    }
+
+    function configurarMonitorDePrefixo() {
+        const inputId = document.getElementById('identificacao');
+        inputId.addEventListener('keydown', function(e) {
+            if (document.getElementById('edit-id').value !== '') return;
+            const prefixo = (configuracaoSetores[setorAtivoParaDica] || { id: '' }).id;
+            if (e.key === 'Backspace' && this.value === prefixo) e.preventDefault();
+        });
+        inputId.addEventListener('input', function() {
+            if (document.getElementById('edit-id').value !== '') { this.value = this.value.toUpperCase(); return; }
+            const prefixo = (configuracaoSetores[setorAtivoParaDica] || { id: '' }).id;
+            if (!this.value.startsWith(prefixo)) this.value = prefixo + this.value.replace(prefixo, '');
+            this.value = this.value.toUpperCase();
+        });
+    }
+
+    document.getElementById('formCadastro').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const dados = {
+            id: document.getElementById('edit-id').value || null,
+            identificacao: document.getElementById('identificacao').value,
+            usuario: document.getElementById('usuario').value,
+            monitor_info: document.getElementById('monitor_info').value,
+            ip_maquina: document.getElementById('ip_maquina').value,
+            situacao: document.getElementById('situacao').value,
+            observacoes: document.getElementById('observacoes').value
         };
+        const res = await window.api.salvarComputador(dados);
+        if (res.success) {
+            bootstrap.Modal.getInstance(document.getElementById('modalCadastro'))?.hide();
+            await atualizarVisualizacao();
+        } else { alert("Erro ao salvar: " + res.error); }
+    });
 
-        window.onload = async () => {
-            await renderizarTabela(); 
-            configurarMonitorDePrefixo();
-        };
-
-        function marcarAtivo(elemento) {
-            document.querySelectorAll('.btn-setor').forEach(b => b.classList.remove('active'));
-            if (elemento) {
-                elemento.classList.add('active');
-                const btnNovo = document.getElementById('btnNovoRegistro');
-                const textoBotao = elemento.innerText.toUpperCase();
-                btnNovo.style.display = (textoBotao.includes("VER TODOS") || textoBotao.includes("MANUTENÇÃO")) ? 'none' : 'block';
-            }
+    async function excluir(id) {
+        if (confirm('Excluir este registro permanentemente?')) {
+            const res = await window.api.excluirComputador(id);
+            if (res.success) await atualizarVisualizacao();
         }
+    }
 
-        async function atualizarVisualizacao() {
-            const btnAtivo = document.querySelector('.btn-setor.active');
-            if (btnAtivo) {
-                const texto = btnAtivo.innerText.toUpperCase();
-                if (texto.includes("VER TODOS")) await renderizarTabela(btnAtivo);
-                else if (texto.includes("MANUTENÇÃO")) await filtrarManutencao(btnAtivo);
-                else await filtrarPorSetor(setorAtivoParaDica, btnAtivo);
-            } else await renderizarTabela();
-        }
+    function filtrarTabela() {
+        const termo = document.getElementById('inputBusca').value.toLowerCase();
+        const filtrados = listaAtualComputadores.filter(i =>
+            i.usuario.toLowerCase().includes(termo) ||
+            i.identificacao.toLowerCase().includes(termo) ||
+            (i.ip_maquina && i.ip_maquina.includes(termo))
+        );
+        desenharLinhas(filtrados);
+    }
 
-        async function renderizarTabela(btn) {
-            const btnTodos = btn || document.querySelector('button[onclick*="renderizarTabela"]');
-            if(btnTodos) marcarAtivo(btnTodos);
-            document.getElementById('titulo-sessao').innerText = "Controle de Máquinas - Geral";
-            try {
-                const response = await window.api.getComputadores();
-                listaAtualComputadores = response || [];
-                desenharLinhas(listaAtualComputadores);
-            } catch (error) { console.error("Erro:", error); }
-        }
+    // ── PRINT / PDF HELPERS ────────────────────────
+    function prepararConteudoRelatorio() {
+        const agora = new Date();
+        document.getElementById('data-relatorio-texto').innerText = agora.toLocaleString('pt-BR');
 
-        async function filtrarPorSetor(prefixo, btn) {
-            marcarAtivo(btn);
-            setorAtivoParaDica = prefixo;
-            document.getElementById('titulo-sessao').innerText = `Setor: ${prefixo}`;
-            const setorParaView = prefixo.replace(/[\.\s-]/g, '').toLowerCase();
-            try {
-                const filtrados = await window.api.getComputadoresPorSetor(setorParaView);
-                const todos = await window.api.getComputadores();
-                listaAtualComputadores = todos || [];
-                desenharLinhas(filtrados);
-            } catch (error) { console.error("Erro no filtro:", error); }
-        }
+        // Sincroniza o filtro ativo no cabeçalho do relatório
+        const tituloAtivo = document.getElementById('titulo-sessao').innerText;
+        const rhFiltro = document.getElementById('rh-filtro-texto');
+        if (rhFiltro) rhFiltro.innerText = tituloAtivo;
 
-        async function filtrarManutencao(btn) {
-            marcarAtivo(btn);
-            document.getElementById('titulo-sessao').innerText = "Equipamentos em MANUTENÇÃO";
-            try {
-                const filtrados = await window.api.getComputadoresPorSetor('ti_manutencao');
-                const todos = await window.api.getComputadores();
-                listaAtualComputadores = todos || [];
-                desenharLinhas(filtrados);
-            } catch (e) { console.error(e); }
-        }
+        const tabelaOriginal = document.getElementById('corpo-tabela');
+        const linhas = Array.from(tabelaOriginal.querySelectorAll('tr'));
+        if (linhas.length === 0 || (linhas[0]?.innerText.includes("Nenhum"))) return null;
 
-        function desenharLinhas(dados) {
-            const corpo = document.getElementById('corpo-tabela');
-            document.getElementById('contador-registros').innerText = `Total: ${dados.length} registro(s)`;
-            
-            if (dados.length === 0) {
-                corpo.innerHTML = `<tr><td colspan="8" class="text-center py-3 text-muted">Nenhum registro encontrado.</td></tr>`;
-                return;
-            }
+        const htmlOriginal = tabelaOriginal.innerHTML;
+        const setores = {}, totais = { 'OTIMO': 0, 'BOM': 0, 'MANUTENÇÃO': 0 };
 
-            corpo.innerHTML = dados.map((item, index) => {
-                let badge = item.situacao === 'OTIMO' ? 'bg-success' : item.situacao === 'BOM' ? 'bg-warning text-dark' : 'bg-danger';
-                let borda = (item.identificacao.startsWith('P3') || item.identificacao.startsWith('NTI')) ? 'borda-setor-nti' : 'borda-setor-outros';
-                
-                return `<tr class="align-middle ${borda}">
-                    <td class="text-center small text-muted">${index + 1}</td>
-                    <td class="fw-bold text-primary">${item.identificacao}</td>
-                    <td>${item.usuario}</td>
-                    <td class="small text-danger fw-bold">${item.monitor_info || '-'}</td>
-                    <td class="text-center font-monospace">${item.ip_maquina || '-'}</td>
-                    <td class="text-center">
-                        <span class="badge ${badge} p-2 w-100 badge-input">${item.situacao}</span>
-                        <span class="d-none d-print-block">${item.situacao}</span>
-                    </td>
-                    <td class="small text-muted" style="font-size: 0.75rem;">${item.observacoes || '-'}</td>
-                    <td class="col-acoes text-center no-print">
-                        <button class="btn btn-sm btn-outline-warning" onclick="prepararEdicao(${item.id})">✏️</button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="excluir(${item.id})">🗑️</button>
-                    </td>
-                </tr>`;
-            }).join('');
-        }
+        linhas.forEach((linha, idx) => {
+            if (!linha.cells || linha.cells.length < 6) return;
+            const idTexto = linha.cells[1]?.innerText || '';
+            const situacao = linha.cells[5]?.innerText.trim().toUpperCase() || '';
+            const setor = idTexto.split('-')[0] || 'OUTROS';
+            if (!setores[setor]) setores[setor] = [];
 
-        async function prepararEdicao(id) {
-            const item = listaAtualComputadores.find(c => c.id == id);
-            if(!item) return;
-
-            const backdrops = document.querySelectorAll('.modal-backdrop');
-            backdrops.forEach(b => b.remove());
-            document.body.classList.remove('modal-open');
-            document.body.style.paddingRight = '0';
-
-            document.getElementById('edit-id').value = item.id;
-            document.getElementById('identificacao').value = item.identificacao;
-            document.getElementById('usuario').value = item.usuario;
-            document.getElementById('monitor_info').value = item.monitor_info;
-            document.getElementById('ip_maquina').value = item.ip_maquina || '';
-            document.getElementById('situacao').value = item.situacao;
-            document.getElementById('observacoes').value = item.observacoes;
-
-            document.getElementById('modalTitle').innerText = 'Editar Registro';
-            document.getElementById('modalHeader').className = 'modal-header bg-warning text-dark';
-            document.getElementById('btnSalvar').className = 'btn btn-warning fw-bold text-dark';
-            document.getElementById('btnSalvar').innerText = 'Atualizar no Banco';
-
-            const modalEl = document.getElementById('modalCadastro');
-            const m = bootstrap.Modal.getOrCreateInstance(modalEl);
-            m.show();
-        }
-
-        function abrirModalCadastro() {
-            const backdrops = document.querySelectorAll('.modal-backdrop');
-            backdrops.forEach(b => b.remove());
-
-            const form = document.getElementById('formCadastro');
-            form.reset();
-            document.getElementById('edit-id').value = '';
-
-            document.getElementById('modalTitle').innerText = 'Novo Registro';
-            document.getElementById('modalHeader').className = 'modal-header bg-primary text-white';
-            document.getElementById('btnSalvar').className = 'btn btn-success';
-            document.getElementById('btnSalvar').innerText = 'Salvar no Banco';
-
-            const config = configuracaoSetores[setorAtivoParaDica] || { id: '' };
-            const inputId = document.getElementById('identificacao');
-            inputId.value = config.id;
-
-            const modalEl = document.getElementById('modalCadastro');
-            const m = bootstrap.Modal.getOrCreateInstance(modalEl);
-            m.show();
-
-            modalEl.addEventListener('shown.bs.modal', function () {
-                inputId.focus();
-                const val = inputId.value;
-                inputId.value = '';
-                inputId.value = val;
-            }, { once: true });
-        }
-
-        function configurarMonitorDePrefixo() {
-            const inputId = document.getElementById('identificacao');
-            
-            inputId.addEventListener('keydown', function(e) {
-                const ehEdicao = document.getElementById('edit-id').value !== '';
-                if(ehEdicao) return;
-
-                const config = configuracaoSetores[setorAtivoParaDica] || { id: '' };
-                const prefixo = config.id;
-                if (e.key === 'Backspace' && this.value === prefixo) {
-                    e.preventDefault();
-                }
-            });
-
-            inputId.addEventListener('input', function() {
-                const ehEdicao = document.getElementById('edit-id').value !== '';
-                if(ehEdicao) {
-                    this.value = this.value.toUpperCase();
-                    return;
-                }
-
-                const config = configuracaoSetores[setorAtivoParaDica] || { id: '' };
-                const prefixo = config.id;
-                if (!this.value.startsWith(prefixo)) {
-                    this.value = prefixo + this.value.replace(prefixo, "");
-                }
-                this.value = this.value.toUpperCase();
-            });
-        }
-
-        document.getElementById('formCadastro').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const dados = {
-                id: document.getElementById('edit-id').value || null,
-                identificacao: document.getElementById('identificacao').value,
-                usuario: document.getElementById('usuario').value,
-                monitor_info: document.getElementById('monitor_info').value,
-                ip_maquina: document.getElementById('ip_maquina').value,
-                situacao: document.getElementById('situacao').value,
-                observacoes: document.getElementById('observacoes').value
-            };
-            const res = await window.api.salvarComputador(dados);
-            if (res.success) {
-                const modalInstance = bootstrap.Modal.getInstance(document.getElementById('modalCadastro'));
-                if(modalInstance) modalInstance.hide();
-                await atualizarVisualizacao();
-            } else { alert("Erro ao salvar: " + res.error); }
+            // Aplica zebra e badge colorido para impressão
+            const zebraClass = idx % 2 === 0 ? '' : 'rpt-zebra';
+            const badgeClass = situacao === 'OTIMO' ? 'rpt-badge-otimo' : situacao === 'BOM' ? 'rpt-badge-bom' : 'rpt-badge-manut';
+            let linhaMod = linha.outerHTML
+                .replace(/class="([^"]*badge-status[^"]*)"/, `class="badge-status ${badgeClass}"`)
+                .replace(/<tr class="[^"]*"/, `<tr class="${zebraClass}"`);
+            setores[setor].push(linhaMod);
+            if (totais.hasOwnProperty(situacao)) totais[situacao]++;
         });
 
-        async function excluir(id) {
-            if (confirm('Excluir permanentemente?')) {
-                const res = await window.api.excluirComputador(id);
-                if (res.success) await atualizarVisualizacao();
-            }
+        let novoConteudo = '';
+        for (const setor in setores) {
+            novoConteudo += `<tr><td colspan="8" class="rpt-setor-header">▪ Setor: ${setor} &nbsp;·&nbsp; ${setores[setor].length} equipamento(s)</td></tr>`;
+            novoConteudo += setores[setor].join('');
         }
 
-        function filtrarTabela() {
-            const termo = document.getElementById('inputBusca').value.toLowerCase();
-            const filtrados = listaAtualComputadores.filter(i =>
-                i.usuario.toLowerCase().includes(termo) || 
-                i.identificacao.toLowerCase().includes(termo) ||
-                (i.ip_maquina && i.ip_maquina.includes(termo))
-            );
-            desenharLinhas(filtrados);
+        // Monta resumo no rodapé via DOM (não na tabela)
+        const totalGeral = totais['OTIMO'] + totais['BOM'] + totais['MANUTENÇÃO'];
+        const resumoContainer = document.getElementById('rpt-resumo-container');
+        if (resumoContainer) {
+            resumoContainer.innerHTML = `
+                <div class="rpt-resumo">
+                    <div class="rpt-resumo-title">Resumo do Relatório</div>
+                    <div class="rpt-resumo-row"><span>🟢 Ótimo</span><strong>${totais['OTIMO']}</strong></div>
+                    <div class="rpt-resumo-row"><span>🟡 Bom</span><strong>${totais['BOM']}</strong></div>
+                    <div class="rpt-resumo-row"><span>🔴 Manutenção</span><strong>${totais['MANUTENÇÃO']}</strong></div>
+                    <div class="rpt-resumo-row total"><span>Total Geral</span><strong>${totalGeral}</strong></div>
+                </div>`;
         }
 
-        // ============================================================
-        // FUNÇÃO AUXILIAR: prepara o conteúdo da tabela para exportação
-        // (usada tanto pelo imprimir quanto pelo salvar PDF)
-        // ============================================================
-        function prepararConteudoRelatorio() {
-            const agora = new Date();
-            document.getElementById('data-relatorio-texto').innerText = agora.toLocaleString('pt-BR');
+        return { novoConteudo, htmlOriginal };
+    }
 
-            const tabelaOriginal = document.getElementById('corpo-tabela');
-            const linhas = Array.from(tabelaOriginal.querySelectorAll('tr'));
-            if (linhas.length === 0 || (linhas[0] && linhas[0].innerText.includes("Nenhum registro"))) {
-                return null; // sinaliza tabela vazia
-            }
+    function imprimirRelatorio() {
+        const resultado = prepararConteudoRelatorio();
+        const tb = document.getElementById('corpo-tabela');
+        if (!resultado) { window.print(); return; }
+        tb.innerHTML = resultado.novoConteudo;
+        window.print();
+        tb.innerHTML = resultado.htmlOriginal;
+    }
 
-            const htmlOriginal = tabelaOriginal.innerHTML;
-            const setores = {};
-            const totais = { 'OTIMO': 0, 'BOM': 0, 'MANUTENÇÃO': 0 };
+    async function salvarPDF() {
+        const resultado = prepararConteudoRelatorio();
+        const tb = document.getElementById('corpo-tabela');
+        const loading = document.getElementById('pdf-loading');
+        if (resultado) tb.innerHTML = resultado.novoConteudo;
 
-            linhas.forEach(linha => {
-                const idTexto = linha.cells[1].innerText;
-                const situacao = linha.cells[5].innerText.trim().toUpperCase();
-                const setor = idTexto.split('-')[0] || "DIVERSOS";
-                if (!setores[setor]) setores[setor] = [];
-                setores[setor].push(linha.outerHTML);
-                if (totais.hasOwnProperty(situacao)) totais[situacao]++;
-            });
+        const header = document.getElementById('relatorio-header');
+        const footer = document.getElementById('relatorio-footer');
+        header.style.display = 'flex';
+        footer.style.display = 'block';
+        loading.classList.add('ativo');
 
-            let novoConteudo = "";
-            for (const setor in setores) {
-                novoConteudo += `<tr><td colspan="8" class="titulo-setor-print">SETOR: ${setor} (${setores[setor].length} MÁQS)</td></tr>${setores[setor].join('')}`;
-            }
+        const titulo = document.getElementById('titulo-sessao').innerText;
+        const nomeArquivo = `Inventario_TI_4BPM_${titulo.replace(/[^a-zA-Z0-9]/g,'_')}_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.pdf`;
 
-            const totalGeral = totais['OTIMO'] + totais['BOM'] + totais['MANUTENÇÃO'];
-            const resumoHtml = `
-                <tr><td colspan="5" style="border:none !important;"></td><td colspan="3" style="border:none !important; padding:0 !important;">
-                    <table class="table table-sm table-bordered tabela-resumo">
-                        <thead><tr><th colspan="2" class="text-center">RESUMO GERAL</th></tr></thead>
-                        <tbody>
-                            <tr><td>🟢 OTIMO</td><td class="text-center">${totais['OTIMO']}</td></tr>
-                            <tr><td>🟡 BOM</td><td class="text-center">${totais['BOM']}</td></tr>
-                            <tr><td>🔴 MANUTENÇÃO</td><td class="text-center">${totais['MANUTENÇÃO']}</td></tr>
-                            <tr class="fw-bold"><td>TOTAL GERAL</td><td class="text-center">${totalGeral}</td></tr>
-                        </tbody>
-                    </table>
-                </td></tr>`;
-
-            return { novoConteudo: novoConteudo + resumoHtml, htmlOriginal };
-        }
-
-        // ============================================================
-        // IMPRIMIR (comportamento original mantido)
-        // ============================================================
-        function imprimirRelatorio() {
-            const resultado = prepararConteudoRelatorio();
-            const tabelaOriginal = document.getElementById('corpo-tabela');
-
-            if (!resultado) { window.print(); return; }
-
-            tabelaOriginal.innerHTML = resultado.novoConteudo;
-            window.print();
-            tabelaOriginal.innerHTML = resultado.htmlOriginal;
-        }
-
-        // ============================================================
-        // SALVAR PDF (novo - usa html2pdf.js)
-        // ============================================================
-        async function salvarPDF() {
-            const resultado = prepararConteudoRelatorio();
-            const tabelaOriginal = document.getElementById('corpo-tabela');
-            const loading = document.getElementById('pdf-loading');
-
-            // Monta conteúdo igual ao de impressão
-            if (resultado) {
-                tabelaOriginal.innerHTML = resultado.novoConteudo;
-            }
-
-            // Mostra cabeçalho e rodapé para o PDF
-            const header = document.getElementById('relatorio-header');
-            const footer = document.getElementById('relatorio-footer');
-            header.style.display = 'flex';
-            footer.style.display = 'block';
-
-            loading.classList.add('ativo');
-
-            // Elemento que será capturado
-            const elemento = document.querySelector('.container-fluid');
-
-            const tituloSessao = document.getElementById('titulo-sessao').innerText;
-            const agora = new Date();
-            const nomeArquivo = `Inventario_TI_4BPM_${tituloSessao.replace(/[^a-zA-Z0-9]/g,'_')}_${agora.toLocaleDateString('pt-BR').replace(/\//g,'-')}.pdf`;
-
-            const opcoes = {
-                margin:       [10, 8, 10, 8],
-                filename:     nomeArquivo,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { 
-                    scale: 2, 
-                    useCORS: true,
-                    ignoreElements: (el) => {
-                        // ignora botões, modais, painel de controle e coluna de ações
-                        return el.classList.contains('no-print') || 
-                               el.classList.contains('modal') ||
-                               el.id === 'pdf-loading';
-                    }
+        try {
+            await html2pdf().set({
+                margin: [10, 8, 10, 8],
+                filename: nomeArquivo,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: {
+                    scale: 2, useCORS: true,
+                    ignoreElements: (el) => el.classList.contains('no-print') || el.classList.contains('modal') || el.id === 'pdf-loading'
                 },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
-            };
-
-            try {
-                await html2pdf().set(opcoes).from(elemento).save();
-            } catch(e) {
-                alert("Erro ao gerar PDF: " + e.message);
-            } finally {
-                // Restaura tudo
-                loading.classList.remove('ativo');
-                header.style.display = 'none';
-                footer.style.display = 'none';
-                if (resultado) {
-                    tabelaOriginal.innerHTML = resultado.htmlOriginal;
-                }
-            }
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            }).from(document.querySelector('.app-body')).save();
+        } catch(e) { alert("Erro ao gerar PDF: " + e.message); }
+        finally {
+            loading.classList.remove('ativo');
+            header.style.display = 'none';
+            footer.style.display = 'none';
+            if (resultado) tb.innerHTML = resultado.htmlOriginal;
         }
-    </script>
+    }
+</script>
 </body>
 </html>
