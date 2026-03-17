@@ -23,11 +23,11 @@
         }
 
         * { box-sizing: border-box; }
-        body {
+        html, body {
+            height: 100%;
             background: var(--bg-main);
             color: var(--text-main);
             font-family: 'Barlow', sans-serif;
-            min-height: 100vh;
         }
 
         /* ─── HEADER ──────────────────────────────────── */
@@ -95,7 +95,7 @@
         }
 
         .sector-layer {
-            padding: 12px 18px;
+            padding: 14px 18px;
             display: flex; align-items: center; gap: 12px;
             border-bottom: 1px solid var(--border);
             background: #fff;
@@ -123,17 +123,17 @@
         }
 
         .layer-btns {
-            display: flex; flex-wrap: wrap; gap: 7px;
+            display: flex; flex-wrap: wrap; gap: 8px;
             flex: 1;
         }
 
-        /* ─── SECTOR BUTTONS ──────────────────────────── */
+        /* ─── SECTOR BUTTONS — AUMENTADOS ────────────── */
         .btn-sector {
             font-family: 'Barlow Condensed', sans-serif;
-            font-size: 0.82rem; font-weight: 700;
+            font-size: 0.92rem; font-weight: 700;
             letter-spacing: 1.5px; text-transform: uppercase;
-            padding: 6px 16px;
-            border-radius: 6px;
+            padding: 9px 22px;          /* era 6px 16px */
+            border-radius: 7px;
             border: none; cursor: pointer;
             transition: all 0.18s ease;
             position: relative; overflow: hidden;
@@ -165,17 +165,17 @@
 
         /* ─── BOTTOM ACTION ROW ───────────────────────── */
         .action-row {
-            padding: 10px 18px;
+            padding: 12px 18px;
             background: #f8fafc;
             border-top: 1px solid var(--border);
             display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
         }
         .btn-action {
             font-family: 'Barlow Condensed', sans-serif;
-            font-size: 0.8rem; font-weight: 700;
+            font-size: 0.9rem; font-weight: 700;
             letter-spacing: 1.5px; text-transform: uppercase;
-            padding: 7px 20px;
-            border-radius: 6px;
+            padding: 9px 24px;          /* era 7px 20px */
+            border-radius: 7px;
             border: none; cursor: pointer;
             transition: all 0.18s ease;
             color: #fff;
@@ -275,7 +275,8 @@
             font-weight: 700; font-size: 0.95rem;
             color: #1d4ed8; letter-spacing: 0.5px;
         }
-        .main-table .monitor-cell { color: #dc2626; font-size: 0.8rem; font-weight: 600; }
+        /* ── Monitor/Tombamento: verde ── */
+        .main-table .monitor-cell { color: #000000; font-size: 0.8rem; font-weight: 600; }
         .main-table .ip-cell { font-family: monospace; font-size: 0.8rem; color: #059669; }
         .main-table .obs-cell { font-size: 0.78rem; color: var(--text-muted); }
 
@@ -393,12 +394,84 @@
         }
         .btn-close { filter: none; }
 
+        /* ─── TOAST NOTIFICATIONS ─────────────────────── */
+        #toast-container {
+            position: fixed; top: 18px; right: 18px;
+            z-index: 99999; display: flex; flex-direction: column; gap: 10px;
+            pointer-events: none;
+        }
+        .toast-msg {
+            pointer-events: all;
+            display: flex; align-items: center; gap: 12px;
+            padding: 13px 18px;
+            border-radius: 10px;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 0.9rem; font-weight: 700; letter-spacing: 0.5px;
+            box-shadow: 0 8px 28px rgba(0,0,0,0.18);
+            min-width: 260px; max-width: 360px;
+            animation: toastIn 0.25s ease forwards;
+            border-left: 4px solid rgba(255,255,255,0.4);
+        }
+        .toast-msg.sucesso  { background: #065f46; color: #d1fae5; }
+        .toast-msg.erro     { background: #991b1b; color: #fee2e2; }
+        .toast-msg.info     { background: #1e3a8a; color: #dbeafe; }
+        .toast-msg.saindo   { animation: toastOut 0.3s ease forwards; }
+        .toast-icon { font-size: 1.1rem; flex-shrink: 0; }
+        @keyframes toastIn  { from { opacity:0; transform: translateX(40px); } to { opacity:1; transform: translateX(0); } }
+        @keyframes toastOut { from { opacity:1; transform: translateX(0);    } to { opacity:0; transform: translateX(40px); } }
+
+        /* ─── CONFIRM DIALOG ──────────────────────────── */
+        #confirm-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(15,23,42,0.6); z-index: 99998;
+            justify-content: center; align-items: center;
+            backdrop-filter: blur(3px);
+        }
+        #confirm-overlay.ativo { display: flex; }
+        #confirm-box {
+            background: #fff; border-radius: 14px;
+            padding: 28px 32px; max-width: 380px; width: 90%;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.2);
+            text-align: center;
+            animation: toastIn 0.2s ease;
+        }
+        #confirm-box .confirm-icon { font-size: 2.2rem; margin-bottom: 10px; }
+        #confirm-box .confirm-title {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 1.1rem; font-weight: 800;
+            letter-spacing: 1px; text-transform: uppercase;
+            color: #1e293b; margin-bottom: 6px;
+        }
+        #confirm-box .confirm-msg {
+            font-size: 0.85rem; color: #64748b; margin-bottom: 22px;
+        }
+        #confirm-box .confirm-btns { display: flex; gap: 10px; justify-content: center; }
+        .btn-confirm-cancel {
+            padding: 9px 24px; border-radius: 7px;
+            border: 1px solid #e2e8f0; background: #f8fafc;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 0.85rem; font-weight: 700; letter-spacing: 1px;
+            text-transform: uppercase; cursor: pointer; color: #64748b;
+            transition: all 0.15s;
+        }
+        .btn-confirm-cancel:hover { background: #e2e8f0; color: #1e293b; }
+        .btn-confirm-ok {
+            padding: 9px 24px; border-radius: 7px;
+            border: none; background: linear-gradient(135deg, #dc2626, #991b1b);
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 0.85rem; font-weight: 800; letter-spacing: 1px;
+            text-transform: uppercase; cursor: pointer; color: #fff;
+            box-shadow: 0 2px 10px rgba(220,38,38,0.35);
+            transition: all 0.15s;
+        }
+        .btn-confirm-ok:hover { filter: brightness(1.1); }
+
         /* ─── EMPTY STATE ─────────────────────────────── */
         .empty-state {
-            text-align: center; padding: 48px 20px;
+            text-align: center; padding: 32px 20px;
             color: var(--text-muted);
         }
-        .empty-state .icon { font-size: 2.5rem; margin-bottom: 12px; }
+        .empty-state .icon { font-size: 2rem; margin-bottom: 8px; }
         .empty-state p { font-size: 0.875rem; margin: 0; }
 
         /* ─── LOADING OVERLAY ─────────────────────────── */
@@ -417,11 +490,11 @@
         /* ─── PRINT STYLES ────────────────────────────── */
         .relatorio-header, .relatorio-footer { display: none; }
 
-        /* Estilos usados apenas no PDF/impressão */
         .rh-topo {
             display: flex; align-items: center; gap: 18px;
             border-bottom: 3px solid #1e3a8a;
             padding-bottom: 12px; margin-bottom: 14px;
+            width: 100%;
         }
         .rh-brasao {
             width: 64px; height: 64px; flex-shrink: 0;
@@ -439,8 +512,22 @@
                                letter-spacing: 2px; text-transform: uppercase; color: #1e3a8a;
                                border-top: 1px solid #bfdbfe; border-bottom: 1px solid #bfdbfe;
                                padding: 3px 14px; }
-        .rh-meta { text-align: right; font-size: 0.65rem; color: #64748b; flex-shrink: 0; }
-        .rh-meta strong { display: block; font-size: 0.7rem; color: #1e293b; }
+        .rh-meta {
+            text-align: right; font-size: 0.65rem; color: #64748b;
+            flex-shrink: 0; min-width: 200px;
+            display: flex; flex-direction: column;
+            align-items: flex-end; justify-content: center;
+            border-left: 2px solid #bfdbfe;
+            padding-left: 20px;
+            margin-left: auto;
+        }
+        .rh-meta strong {
+            display: block; font-size: 0.85rem; font-weight: 800;
+            color: #1e3a8a; letter-spacing: 1px; text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .rh-meta .rh-gerado { font-size: 0.62rem; color: #94a3b8; margin-bottom: 2px; }
+        .rh-meta .rh-data   { font-size: 0.68rem; color: #475569; font-weight: 600; }
 
         .rpt-setor-header {
             background: #1e3a8a !important;
@@ -458,6 +545,20 @@
         .rpt-badge-otimo  { background: #dcfce7 !important; color: #166534 !important; border-radius: 3px; padding: 1px 6px; font-size: 0.7rem; font-weight: 700; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         .rpt-badge-bom    { background: #fef9c3 !important; color: #854d0e !important; border-radius: 3px; padding: 1px 6px; font-size: 0.7rem; font-weight: 700; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         .rpt-badge-manut  { background: #fee2e2 !important; color: #991b1b !important; border-radius: 3px; padding: 1px 6px; font-size: 0.7rem; font-weight: 700; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .rpt-monitor-cell { color: #059669 !important; font-weight: 600; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+        /* Cabeçalho de companhia no relatório — fundo mais escuro */
+        .rpt-cia-header {
+            background: #0f172a !important;
+            color: #fff !important;
+            font-weight: 800;
+            font-size: 0.8rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            padding: 7px 10px !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
 
         .rpt-resumo-wrap { margin-top: 20px; display: flex; justify-content: flex-end; }
         .rpt-resumo {
@@ -477,20 +578,26 @@
         .rpt-resumo-row.total { background: #f8fafc !important; font-weight: 700; border-bottom: none; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
         .rpt-footer-wrap {
-            margin-top: 32px;
+            margin-top: 40px;
             border-top: 2px solid #1e3a8a;
-            padding-top: 14px;
+            padding-top: 16px;
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
+            page-break-inside: avoid;
+            break-inside: avoid;
         }
-        .rpt-footer-left { font-size: 0.65rem; color: #64748b; }
-        .rpt-footer-left strong { display: block; color: #1e293b; font-size: 0.7rem; }
+        .rpt-footer-left { font-size: 0.65rem; color: #64748b; line-height: 1.7; }
+        .rpt-footer-left strong { display: block; color: #1e293b; font-size: 0.72rem; margin-bottom: 2px; }
         .rpt-assinatura { text-align: center; }
-        .rpt-assinatura .linha { border-top: 1px solid #1e293b; width: 220px; margin: 0 auto 4px; }
-        .rpt-assinatura p { margin: 0; font-size: 0.68rem; color: #1e293b; font-weight: 700; letter-spacing: 0.5px; }
-        .rpt-assinatura small { font-size: 0.62rem; color: #64748b; }
-        .rpt-assinaturas { display: flex; gap: 40px; }
+        .rpt-assinatura .linha {
+            border-top: 1px solid #334155;
+            width: 220px;
+            margin: 44px auto 5px;
+        }
+        .rpt-assinatura p { margin: 0; font-size: 0.7rem; color: #1e293b; font-weight: 700; letter-spacing: 0.5px; }
+        .rpt-assinatura small { font-size: 0.63rem; color: #64748b; display: block; margin-top: 2px; }
+        .rpt-assinaturas { display: flex; gap: 52px; align-items: flex-end; }
 
         @media print {
             @page { size: landscape; margin: 1.2cm 1cm; }
@@ -505,7 +612,9 @@
                               font-size: 0.68rem; letter-spacing: 1.5px; text-transform: uppercase;
                               -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .main-table td { border: 1px solid #e2e8f0 !important; padding: 5px 8px !important; color: #1e293b !important; font-size: 0.78rem; }
+            /* Rodapé nunca quebra */
             .relatorio-footer { display: block !important; }
+            .rpt-footer-wrap  { page-break-inside: avoid; break-inside: avoid; }
         }
     </style>
 </head>
@@ -515,6 +624,22 @@
 <div id="pdf-loading">
     <div class="spinner-border text-light" style="width:2.5rem;height:2.5rem;"></div>
     <p>Gerando PDF, aguarde...</p>
+</div>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<!-- Confirm dialog -->
+<div id="confirm-overlay">
+    <div id="confirm-box">
+        <div class="confirm-icon">🗑️</div>
+        <div class="confirm-title">Excluir Registro</div>
+        <div class="confirm-msg">Esta ação é permanente e não pode ser desfeita.</div>
+        <div class="confirm-btns">
+            <button class="btn-confirm-cancel" id="confirm-cancel">Cancelar</button>
+            <button class="btn-confirm-ok" id="confirm-ok">Excluir</button>
+        </div>
+    </div>
 </div>
 
 <!-- ─── HEADER ──────────────────────────────── -->
@@ -544,8 +669,8 @@
             </div>
             <div class="rh-meta">
                 <strong id="rh-filtro-texto">Visão Geral</strong>
-                Gerado em:<br>
-                <span id="data-relatorio-texto"></span>
+                <span class="rh-gerado">Gerado em:</span>
+                <span class="rh-data" id="data-relatorio-texto"></span>
             </div>
         </div>
     </div>
@@ -739,29 +864,24 @@
     let setorAtivoParaDica = 'NTI';
 
     const configuracaoSetores = {
-        // PCS
         'P-1': { id: 'P1-' }, 'P-2': { id: 'P2-' },
         'P-3': { id: 'P3-' }, 'P-4': { id: 'P4-' },
         'P-5': { id: 'P5-' }, 'P-6': { id: 'P6-' },
         'NTI': { id: 'NTI-' }, 'CIA': { id: 'CIA-' },
         'CMD': { id: 'CMD-' }, 'SUB CMD': { id: 'SUB-' },
-        // 1ª CIA
         '1CIA-P1': { id: '1CIA-P1-' }, '1CIA-P2': { id: '1CIA-P2-' },
         '1CIA-P3': { id: '1CIA-P3-' }, '1CIA-P4': { id: '1CIA-P4-' },
         '1CIA-P5': { id: '1CIA-P5-' }, '1CIA-P6': { id: '1CIA-P6-' },
         '1CIA-NTI': { id: '1CIA-NTI-' },
-        // 2ª CIA
         '2CIA-P1': { id: '2CIA-P1-' }, '2CIA-P2': { id: '2CIA-P2-' },
         '2CIA-P3': { id: '2CIA-P3-' }, '2CIA-P4': { id: '2CIA-P4-' },
         '2CIA-P5': { id: '2CIA-P5-' }, '2CIA-P6': { id: '2CIA-P6-' },
         '2CIA-NTI': { id: '2CIA-NTI-' },
-        // Cidades
         'PIMENTA BUENO': { id: 'PB-' },
         'ESPIGÃO':       { id: 'ESP-' },
         'PARECIS':       { id: 'PAR-' }
     };
 
-    // ── CLOCK ──────────────────────────────────────
     function updateClock() {
         const now = new Date();
         document.getElementById('clock').innerText = now.toLocaleTimeString('pt-BR');
@@ -770,7 +890,6 @@
     setInterval(updateClock, 1000);
     updateClock();
 
-    // ── INIT ───────────────────────────────────────
     window.onload = async () => {
         await renderizarTabela();
         configurarMonitorDePrefixo();
@@ -814,9 +933,8 @@
         const setorParaView = prefixo.replace(/[\.\s-]/g, '').toLowerCase();
         try {
             const filtrados = await window.api.getComputadoresPorSetor(setorParaView);
-            const todos = await window.api.getComputadores();
-            listaAtualComputadores = todos || [];
-            desenharLinhas(filtrados);
+            listaAtualComputadores = filtrados || [];
+            desenharLinhas(listaAtualComputadores);
         } catch (error) { console.error("Erro no filtro:", error); }
     }
 
@@ -824,16 +942,13 @@
         marcarAtivo(btn);
         document.getElementById('titulo-sessao').innerText = "Equipamentos em Manutenção";
         try {
-            // Busca manutenção nas 3 tabelas (PCS, 1ª CIA, 2ª CIA)
             const [r1, r2, r3] = await Promise.all([
                 window.api.getComputadoresPorSetor('ti_manutencao'),
                 window.api.getComputadoresPorSetor('1cia_ti_manutencao'),
                 window.api.getComputadoresPorSetor('2cia_ti_manutencao'),
             ]);
-            const filtrados = [...(r1 || []), ...(r2 || []), ...(r3 || [])];
-            const todos = await window.api.getComputadores();
-            listaAtualComputadores = todos || [];
-            desenharLinhas(filtrados);
+            listaAtualComputadores = [...(r1 || []), ...(r2 || []), ...(r3 || [])];
+            desenharLinhas(listaAtualComputadores);
         } catch (e) { console.error(e); }
     }
 
@@ -843,9 +958,8 @@
         document.getElementById('titulo-sessao').innerText = `Cidade: ${nome}`;
         try {
             const filtrados = await window.api.getComputadoresPorCidade(prefixo);
-            const todos = await window.api.getComputadores();
-            listaAtualComputadores = todos || [];
-            desenharLinhas(filtrados);
+            listaAtualComputadores = filtrados || [];
+            desenharLinhas(listaAtualComputadores);
         } catch (e) { console.error(e); }
     }
 
@@ -891,48 +1005,137 @@
         }).join('');
     }
 
-    async function prepararEdicao(id) {
-        const item = listaAtualComputadores.find(c => c.id == id);
-        if (!item) return;
+    // ── TOAST ──────────────────────────────────────
+    function toast(msg, tipo = 'sucesso') {
+        const icons = { sucesso: '✅', erro: '❌', info: 'ℹ️' };
+        const el = document.createElement('div');
+        el.className = `toast-msg ${tipo}`;
+        el.innerHTML = `<span class="toast-icon">${icons[tipo]}</span><span>${msg}</span>`;
+        document.getElementById('toast-container').appendChild(el);
+        setTimeout(() => {
+            el.classList.add('saindo');
+            el.addEventListener('animationend', () => el.remove());
+        }, 3200);
+    }
 
+    // ── CONFIRM CUSTOMIZADO ─────────────────────────
+    function confirmar(msg) {
+        return new Promise(resolve => {
+            const overlay = document.getElementById('confirm-overlay');
+            document.querySelector('#confirm-box .confirm-msg').innerText = msg;
+            overlay.classList.add('ativo');
+            const ok     = document.getElementById('confirm-ok');
+            const cancel = document.getElementById('confirm-cancel');
+            function fechar(res) {
+                overlay.classList.remove('ativo');
+                ok.removeEventListener('click', handleOk);
+                cancel.removeEventListener('click', handleCancel);
+                resolve(res);
+            }
+            function handleOk()     { fechar(true); }
+            function handleCancel() { fechar(false); }
+            ok.addEventListener('click', handleOk);
+            cancel.addEventListener('click', handleCancel);
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) fechar(false); }, { once: true });
+        });
+    }
+
+    // ── MODAL: limpa backdrop sem bugs ─────────────
+    function fecharModalLimpo() {
+        const modalEl = document.getElementById('modalCadastro');
+        const inst = bootstrap.Modal.getInstance(modalEl);
+        if (inst) { inst.hide(); }
+        setTimeout(() => {
+            document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+        }, 300);
+    }
+
+    function abrirModal() {
         document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
         document.body.classList.remove('modal-open');
-        document.body.style.paddingRight = '0';
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+        const modalEl = document.getElementById('modalCadastro');
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    }
 
-        document.getElementById('edit-id').value = item.id;
-        document.getElementById('identificacao').value = item.identificacao;
-        document.getElementById('usuario').value = item.usuario;
-        document.getElementById('monitor_info').value = item.monitor_info;
-        document.getElementById('ip_maquina').value = item.ip_maquina || '';
-        document.getElementById('situacao').value = item.situacao;
-        document.getElementById('observacoes').value = item.observacoes;
+    async function prepararEdicao(id) {
+        const item = listaAtualComputadores.find(c => c.id == id);
+        if (!item) { toast('Registro não encontrado.', 'erro'); return; }
 
-        document.getElementById('modalTitle').innerText = 'Editar Registro';
-        document.getElementById('btnSalvar').className = 'btn-modal-save edit-mode';
-        document.getElementById('btnSalvar').innerText = 'Atualizar Registro';
+        document.getElementById('edit-id').value       = item.id;
+        document.getElementById('identificacao').value  = item.identificacao;
+        document.getElementById('usuario').value        = item.usuario;
+        document.getElementById('monitor_info').value   = item.monitor_info || '';
+        document.getElementById('ip_maquina').value     = item.ip_maquina || '';
+        document.getElementById('situacao').value       = item.situacao;
+        document.getElementById('observacoes').value    = item.observacoes || '';
 
-        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalCadastro')).show();
+        document.getElementById('modalTitle').innerText   = 'Editar Registro';
+        document.getElementById('btnSalvar').className    = 'btn-modal-save edit-mode';
+        document.getElementById('btnSalvar').innerText    = 'Atualizar Registro';
+
+        abrirModal();
     }
 
     function abrirModalCadastro() {
-        document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
         document.getElementById('formCadastro').reset();
         document.getElementById('edit-id').value = '';
 
         document.getElementById('modalTitle').innerText = 'Novo Registro';
-        document.getElementById('btnSalvar').className = 'btn-modal-save';
-        document.getElementById('btnSalvar').innerText = 'Salvar no Banco';
+        document.getElementById('btnSalvar').className  = 'btn-modal-save';
+        document.getElementById('btnSalvar').innerText  = 'Salvar no Banco';
 
-        const config = configuracaoSetores[setorAtivoParaDica] || { id: '' };
+        const config  = configuracaoSetores[setorAtivoParaDica] || { id: '' };
         const inputId = document.getElementById('identificacao');
         inputId.value = config.id;
 
+        abrirModal();
+
         const modalEl = document.getElementById('modalCadastro');
-        bootstrap.Modal.getOrCreateInstance(modalEl).show();
         modalEl.addEventListener('shown.bs.modal', () => {
             inputId.focus();
             const v = inputId.value; inputId.value = ''; inputId.value = v;
         }, { once: true });
+    }
+
+    document.getElementById('formCadastro').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const isEdicao = !!document.getElementById('edit-id').value;
+        const dados = {
+            id:           document.getElementById('edit-id').value || null,
+            identificacao:document.getElementById('identificacao').value,
+            usuario:      document.getElementById('usuario').value,
+            monitor_info: document.getElementById('monitor_info').value,
+            ip_maquina:   document.getElementById('ip_maquina').value,
+            situacao:     document.getElementById('situacao').value,
+            observacoes:  document.getElementById('observacoes').value
+        };
+        const res = await window.api.salvarComputador(dados);
+        if (res.success) {
+            fecharModalLimpo();
+            toast(isEdicao ? 'Registro atualizado com sucesso!' : 'Registro salvo com sucesso!', 'sucesso');
+            await atualizarVisualizacao();
+        } else {
+            toast('Erro ao salvar: ' + res.error, 'erro');
+        }
+    });
+
+    async function excluir(id) {
+        const item = listaAtualComputadores.find(c => c.id == id);
+        const nome = item ? item.usuario : `ID ${id}`;
+        const ok = await confirmar(`Excluir permanentemente o registro de ${nome}?`);
+        if (!ok) return;
+        const res = await window.api.excluirComputador({ id, identificacao: item?.identificacao || '' });
+        if (res.success) {
+            toast('Registro excluído.', 'info');
+            await atualizarVisualizacao();
+        } else {
+            toast('Erro ao excluir: ' + res.error, 'erro');
+        }
     }
 
     function configurarMonitorDePrefixo() {
@@ -950,31 +1153,6 @@
         });
     }
 
-    document.getElementById('formCadastro').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const dados = {
-            id: document.getElementById('edit-id').value || null,
-            identificacao: document.getElementById('identificacao').value,
-            usuario: document.getElementById('usuario').value,
-            monitor_info: document.getElementById('monitor_info').value,
-            ip_maquina: document.getElementById('ip_maquina').value,
-            situacao: document.getElementById('situacao').value,
-            observacoes: document.getElementById('observacoes').value
-        };
-        const res = await window.api.salvarComputador(dados);
-        if (res.success) {
-            bootstrap.Modal.getInstance(document.getElementById('modalCadastro'))?.hide();
-            await atualizarVisualizacao();
-        } else { alert("Erro ao salvar: " + res.error); }
-    });
-
-    async function excluir(id) {
-        if (confirm('Excluir este registro permanentemente?')) {
-            const res = await window.api.excluirComputador(id);
-            if (res.success) await atualizarVisualizacao();
-        }
-    }
-
     function filtrarTabela() {
         const termo = document.getElementById('inputBusca').value.toLowerCase();
         const filtrados = listaAtualComputadores.filter(i =>
@@ -985,12 +1163,31 @@
         desenharLinhas(filtrados);
     }
 
-    // ── PRINT / PDF HELPERS ────────────────────────
+    // Detecta a qual companhia pertence um ID
+    function getCia(idTexto) {
+        const up = idTexto.toUpperCase();
+        if (up.startsWith('5CIA')) return '5ª CIA';
+        if (up.startsWith('4CIA')) return '4ª CIA';
+        if (up.startsWith('3CIA')) return '3ª CIA';
+        if (up.startsWith('2CIA')) return '2ª CIA';
+        if (up.startsWith('1CIA')) return '1ª CIA';
+        return 'PCS';
+    }
+
+    // Detecta o setor dentro da companhia (P1, P2, NTI, etc.)
+    function getSetorLabel(idTexto) {
+        const up = idTexto.toUpperCase();
+        // Para CIAs: "1CIA-P1-XX" → pega a parte do meio
+        const ciaMatch = up.match(/^\dCIA-([^-]+)/);
+        if (ciaMatch) return ciaMatch[1];
+        // Para PCS: "P1-XX" → pega primeiro segmento
+        return up.split('-')[0] || 'OUTROS';
+    }
+
     function prepararConteudoRelatorio() {
         const agora = new Date();
         document.getElementById('data-relatorio-texto').innerText = agora.toLocaleString('pt-BR');
 
-        // Sincroniza o filtro ativo no cabeçalho do relatório
         const tituloAtivo = document.getElementById('titulo-sessao').innerText;
         const rhFiltro = document.getElementById('rh-filtro-texto');
         if (rhFiltro) rhFiltro.innerText = tituloAtivo;
@@ -1000,32 +1197,65 @@
         if (linhas.length === 0 || (linhas[0]?.innerText.includes("Nenhum"))) return null;
 
         const htmlOriginal = tabelaOriginal.innerHTML;
-        const setores = {}, totais = { 'OTIMO': 0, 'BOM': 0, 'MANUTENÇÃO': 0 };
 
-        linhas.forEach((linha, idx) => {
+        // Estrutura: { 'PCS': { 'P1': [...linhas], 'P2': [...] }, '1ª CIA': { ... } }
+        const companhias = {};
+        const ordemCias = ['PCS', '1ª CIA', '2ª CIA', '3ª CIA', '4ª CIA', '5ª CIA'];
+        const totais = { 'OTIMO': 0, 'BOM': 0, 'MANUTENÇÃO': 0 };
+        let zebraIdx = 0;
+
+        linhas.forEach((linha) => {
             if (!linha.cells || linha.cells.length < 6) return;
             const idTexto = linha.cells[1]?.innerText || '';
             const situacao = linha.cells[5]?.innerText.trim().toUpperCase() || '';
-            const setor = idTexto.split('-')[0] || 'OUTROS';
-            if (!setores[setor]) setores[setor] = [];
+            const cia = getCia(idTexto);
+            const setor = getSetorLabel(idTexto);
 
-            // Aplica zebra e badge colorido para impressão
-            const zebraClass = idx % 2 === 0 ? '' : 'rpt-zebra';
+            if (!companhias[cia]) companhias[cia] = {};
+            if (!companhias[cia][setor]) companhias[cia][setor] = [];
+
+            const zebraClass = zebraIdx % 2 === 0 ? '' : 'rpt-zebra';
+            zebraIdx++;
             const badgeClass = situacao === 'OTIMO' ? 'rpt-badge-otimo' : situacao === 'BOM' ? 'rpt-badge-bom' : 'rpt-badge-manut';
+
+            // Aplica cor verde na célula monitor (índice 3)
             let linhaMod = linha.outerHTML
                 .replace(/class="([^"]*badge-status[^"]*)"/, `class="badge-status ${badgeClass}"`)
-                .replace(/<tr class="[^"]*"/, `<tr class="${zebraClass}"`);
-            setores[setor].push(linhaMod);
+                .replace(/<tr class="[^"]*"/, `<tr class="${zebraClass}"`)
+                .replace(/class="monitor-cell"/, `class="monitor-cell rpt-monitor-cell"`);
+
+            companhias[cia][setor].push(linhaMod);
             if (totais.hasOwnProperty(situacao)) totais[situacao]++;
         });
 
-        let novoConteudo = '';
-        for (const setor in setores) {
-            novoConteudo += `<tr><td colspan="8" class="rpt-setor-header">▪ Setor: ${setor} &nbsp;·&nbsp; ${setores[setor].length} equipamento(s)</td></tr>`;
-            novoConteudo += setores[setor].join('');
-        }
+        // Cores por companhia
+        const coresCia = {
+            'PCS':    '#1e3a8a',
+            '1ª CIA': '#4c1d95',
+            '2ª CIA': '#0e7490',
+            '3ª CIA': '#065f46',
+            '4ª CIA': '#9a3412',
+            '5ª CIA': '#831843',
+        };
 
-        // Monta resumo no rodapé via DOM (não na tabela)
+        let novoConteudo = '';
+        const ciasPresentes = ordemCias.filter(c => companhias[c]);
+
+        ciasPresentes.forEach(cia => {
+            const cor = coresCia[cia] || '#1e3a8a';
+            const totalCia = Object.values(companhias[cia]).reduce((s, arr) => s + arr.length, 0);
+            novoConteudo += `<tr><td colspan="8" class="rpt-cia-header" style="background:${cor} !important; border-left: 5px solid rgba(255,255,255,0.4);">
+                ◆ ${cia} &nbsp;·&nbsp; ${totalCia} equipamento(s)
+            </td></tr>`;
+
+            for (const setor in companhias[cia]) {
+                novoConteudo += `<tr><td colspan="8" class="rpt-setor-header" style="padding-left:24px !important;">
+                    ▪ Setor: ${setor} &nbsp;·&nbsp; ${companhias[cia][setor].length} equipamento(s)
+                </td></tr>`;
+                novoConteudo += companhias[cia][setor].join('');
+            }
+        });
+
         const totalGeral = totais['OTIMO'] + totais['BOM'] + totais['MANUTENÇÃO'];
         const resumoContainer = document.getElementById('rpt-resumo-container');
         if (resumoContainer) {
@@ -1053,14 +1283,32 @@
 
     async function salvarPDF() {
         const resultado = prepararConteudoRelatorio();
-        const tb = document.getElementById('corpo-tabela');
-        const loading = document.getElementById('pdf-loading');
-        if (resultado) tb.innerHTML = resultado.novoConteudo;
+        if (!resultado) { toast('Nenhum dado para gerar PDF.', 'info'); return; }
 
-        const header = document.getElementById('relatorio-header');
-        const footer = document.getElementById('relatorio-footer');
+        const loading = document.getElementById('pdf-loading');
+        const header  = document.getElementById('relatorio-header');
+        const footer  = document.getElementById('relatorio-footer');
+        const tb      = document.getElementById('corpo-tabela');
+
+        // Aplica conteúdo formatado
+        tb.innerHTML = resultado.novoConteudo;
+
+        // Mostra header/footer do relatório
         header.style.display = 'flex';
         footer.style.display = 'block';
+
+        // Esconde tudo que não é relatório dentro do app-body
+        const esconder = document.querySelectorAll(
+            '.control-panel, .table-card-header, .table-footer, .no-print'
+        );
+        esconder.forEach(el => el.setAttribute('data-pdf-hidden', el.style.display || ''));
+        esconder.forEach(el => el.style.display = 'none');
+
+        // Remove padding/margin do app-body temporariamente
+        const appBody = document.querySelector('.app-body');
+        const paddingOrig = appBody.style.padding;
+        appBody.style.padding = '0';
+
         loading.classList.add('ativo');
 
         const titulo = document.getElementById('titulo-sessao').innerText;
@@ -1068,21 +1316,24 @@
 
         try {
             await html2pdf().set({
-                margin: [10, 8, 10, 8],
+                margin: [10, 8, 12, 8],
                 filename: nomeArquivo,
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: {
-                    scale: 2, useCORS: true,
-                    ignoreElements: (el) => el.classList.contains('no-print') || el.classList.contains('modal') || el.id === 'pdf-loading'
-                },
+                html2canvas: { scale: 2, useCORS: true, letterRendering: true },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-            }).from(document.querySelector('.app-body')).save();
-        } catch(e) { alert("Erro ao gerar PDF: " + e.message); }
+            }).from(appBody).save();
+        } catch(e) { toast('Erro ao gerar PDF: ' + e.message, 'erro'); }
         finally {
             loading.classList.remove('ativo');
             header.style.display = 'none';
             footer.style.display = 'none';
-            if (resultado) tb.innerHTML = resultado.htmlOriginal;
+            appBody.style.padding = paddingOrig;
+            // Restaura elementos escondidos
+            esconder.forEach(el => {
+                el.style.display = el.getAttribute('data-pdf-hidden') || '';
+                el.removeAttribute('data-pdf-hidden');
+            });
+            tb.innerHTML = resultado.htmlOriginal;
         }
     }
 </script>

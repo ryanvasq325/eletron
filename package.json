@@ -1,6 +1,6 @@
 {
   "name": "eletron",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "testando",
   "homepage": "https://github.com/ryanvasq325/eletron#readme",
   "bugs": {
@@ -24,6 +24,11 @@
   "build": {
     "appId": "com.ryan.eletron",
     "productName": "Inventario TI",
+    "publish": {
+      "provider": "github",
+      "owner": "ryanvasq325",
+      "repo": "eletron"
+    },
     "directories": {
       "output": "dist"
     },
@@ -59,7 +64,9 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.99.0",
+    "electron-log": "^5.4.3",
     "electron-squirrel-startup": "^1.0.1",
+    "electron-updater": "^6.8.3",
     "pg": "^8.20.0",
     "postgres": "^3.4.8"
   }

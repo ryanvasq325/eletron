@@ -1,11 +1,66 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const db = require('./db.js');
+const { autoUpdater } = require('electron-updater');
+const log = require('electron-log');
 
+// ============================================================
+// UPDATER
+// ============================================================
+function configurarUpdater() {
+    autoUpdater.logger = log;
+    autoUpdater.logger.transports.file.level = 'info';
+    autoUpdater.autoDownload = true;
+    autoUpdater.autoInstallOnAppQuit = true;
+
+    autoUpdater.on('checking-for-update', () => {
+        log.info('Verificando atualizações...');
+    });
+
+    autoUpdater.on('update-available', (info) => {
+        log.info('Atualização disponível:', info.version);
+        dialog.showMessageBox({
+            type: 'info',
+            title: 'Atualização disponível',
+            message: 'Uma nova versão do Inventário TI está sendo baixada...',
+            buttons: ['OK']
+        });
+    });
+
+    autoUpdater.on('update-not-available', (info) => {
+        log.info('Nenhuma atualização disponível. Versão atual:', info.version);
+    });
+
+    autoUpdater.on('update-downloaded', () => {
+        log.info('Atualização baixada!');
+        dialog.showMessageBox({
+            type: 'question',
+            title: 'Atualização pronta',
+            message: 'Uma nova versão foi baixada. Deseja reiniciar agora para instalar?',
+            buttons: ['Reiniciar agora', 'Mais tarde']
+        }).then(result => {
+            if (result.response === 0) {
+                autoUpdater.quitAndInstall();
+            }
+        });
+    });
+
+    autoUpdater.on('error', (err) => {
+        log.error('Erro no updater:', err.message);
+    });
+
+    autoUpdater.checkForUpdatesAndNotify();
+}
+
+// ============================================================
+// JANELA PRINCIPAL
+// ============================================================
 const createWindow = () => {
     const win = new BrowserWindow({
         width: 1200,
         height: 800,
+        minWidth: 900,
+        minHeight: 600,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             contextIsolation: true,
@@ -18,7 +73,7 @@ const createWindow = () => {
 };
 
 // ============================================================
-// HELPER: resolve qual tabela e prefixo de view usar
+// HELPER: resolve qual tabela pelo prefixo da identificação
 // ============================================================
 function resolverTabela(setor) {
     if (setor && setor.startsWith('1cia')) {
@@ -64,9 +119,6 @@ ipcMain.handle('buscar-computadores', async () => {
 
 // ============================================================
 // BUSCAR POR SETOR — usa views do banco
-// PCS:   'p1', 'p2', 'nti', 'cmd', 'ti_manutencao'
-// 1ªCIA: '1cia-p1', '1cia-nti', '1cia_ti_manutencao'
-// 2ªCIA: '2cia-p2', '2cia-nti', '2cia_ti_manutencao'
 // ============================================================
 ipcMain.handle('buscar-por-setor', async (event, setor) => {
     try {
@@ -100,8 +152,7 @@ ipcMain.handle('buscar-por-setor', async (event, setor) => {
 });
 
 // ============================================================
-// BUSCAR POR CIDADE — ILIKE direto nas 3 tabelas (sem views)
-// Prefixos: 'PB' = Pimenta Bueno | 'ESP' = Espigão | 'PAR' = Parecis
+// BUSCAR POR CIDADE — ILIKE direto nas 3 tabelas
 // ============================================================
 ipcMain.handle('buscar-por-cidade', async (event, prefixo) => {
     try {
@@ -123,7 +174,7 @@ ipcMain.handle('buscar-por-cidade', async (event, prefixo) => {
 });
 
 // ============================================================
-// SALVAR — detecta a tabela certa pelo prefixo da identificação
+// SALVAR — usa identificação para saber a tabela exata
 // ============================================================
 ipcMain.handle('salvar-computador', async (event, dados) => {
     try {
@@ -132,7 +183,7 @@ ipcMain.handle('salvar-computador', async (event, dados) => {
         const { error } = await db.supabase
             .from(tabela)
             .upsert({
-                id: dados.id || undefined,
+                id: dados.id ? Number(dados.id) : undefined,
                 identificacao: dados.identificacao,
                 usuario: dados.usuario,
                 monitor_info: dados.monitor_info,
@@ -150,29 +201,40 @@ ipcMain.handle('salvar-computador', async (event, dados) => {
 });
 
 // ============================================================
-// EXCLUIR — tenta nas 3 tabelas até achar o id
+// EXCLUIR — usa identificação para ir direto na tabela certa
 // ============================================================
-ipcMain.handle('excluir-computador', async (event, id) => {
+ipcMain.handle('excluir-computador', async (event, { id, identificacao }) => {
     try {
-        const tabelas = ['inventario_ti', 'inventario_ti_1cia', 'inventario_ti_2cia'];
+        const tabela = resolverTabelaPorIdentificacao(identificacao);
 
-        for (const tabela of tabelas) {
-            const { error } = await db.supabase
-                .from(tabela)
-                .delete()
-                .eq('id', id);
+        const { data: existe } = await db.supabase
+            .from(tabela)
+            .select('id')
+            .eq('id', id)
+            .maybeSingle();
 
-            if (!error) return { success: true };
-        }
+        if (!existe) throw new Error(`Registro não encontrado na tabela ${tabela}.`);
 
-        throw new Error('Registro não encontrado em nenhuma tabela.');
+        const { error } = await db.supabase
+            .from(tabela)
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+        return { success: true };
     } catch (err) {
         console.error("Erro ao excluir:", err.message);
         return { success: false, error: err.message };
     }
 });
 
-app.whenReady().then(createWindow);
+// ============================================================
+// APP READY
+// ============================================================
+app.whenReady().then(() => {
+    createWindow();
+    configurarUpdater();
+});
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();
