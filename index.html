@@ -127,12 +127,12 @@
             flex: 1;
         }
 
-        /* ─── SECTOR BUTTONS — AUMENTADOS ────────────── */
+        /* ─── SECTOR BUTTONS ────────────────────────── */
         .btn-sector {
             font-family: 'Barlow Condensed', sans-serif;
             font-size: 0.92rem; font-weight: 700;
             letter-spacing: 1.5px; text-transform: uppercase;
-            padding: 9px 22px;          /* era 6px 16px */
+            padding: 9px 22px;
             border-radius: 7px;
             border: none; cursor: pointer;
             transition: all 0.18s ease;
@@ -153,12 +153,18 @@
         .btn-sector.sub   { background: var(--cor-sub); box-shadow: 0 2px 8px rgba(8,145,178,0.22); }
         .btn-sector.city  { background: linear-gradient(135deg, #16a34a, #15803d); box-shadow: 0 2px 8px rgba(22,163,74,0.22); }
 
+        /* Botões CMD e SUB CMD com cores diferenciadas */
+        .btn-sector.pcs-cmd    { background: linear-gradient(135deg, #1e3a8a, #1e40af); box-shadow: 0 2px 8px rgba(30,58,138,0.35); }
+        .btn-sector.pcs-subcmd { background: linear-gradient(135deg, #1d4ed8, #2563eb); box-shadow: 0 2px 8px rgba(29,78,216,0.35); border: 1px solid rgba(255,255,255,0.2); }
+
         .btn-sector.active {
             outline: 2px solid rgba(0,0,0,0.25);
             outline-offset: 2px;
             transform: translateY(-1px) scale(1.04);
         }
-        .btn-sector.pcs.active   { box-shadow: 0 4px 14px rgba(26,86,219,0.4); }
+        .btn-sector.pcs.active        { box-shadow: 0 4px 14px rgba(26,86,219,0.4); }
+        .btn-sector.pcs-cmd.active    { box-shadow: 0 4px 14px rgba(30,58,138,0.5); }
+        .btn-sector.pcs-subcmd.active { box-shadow: 0 4px 14px rgba(29,78,216,0.5); }
         .btn-sector.cmd.active   { box-shadow: 0 4px 14px rgba(109,40,217,0.4); }
         .btn-sector.sub.active   { box-shadow: 0 4px 14px rgba(8,145,178,0.4); }
         .btn-sector.city.active  { box-shadow: 0 4px 14px rgba(22,163,74,0.4); }
@@ -174,7 +180,7 @@
             font-family: 'Barlow Condensed', sans-serif;
             font-size: 0.9rem; font-weight: 700;
             letter-spacing: 1.5px; text-transform: uppercase;
-            padding: 9px 24px;          /* era 7px 20px */
+            padding: 9px 24px;
             border-radius: 7px;
             border: none; cursor: pointer;
             transition: all 0.18s ease;
@@ -275,7 +281,6 @@
             font-weight: 700; font-size: 0.95rem;
             color: #1d4ed8; letter-spacing: 0.5px;
         }
-        /* ── Monitor/Tombamento: verde ── */
         .main-table .monitor-cell { color: #000000; font-size: 0.8rem; font-weight: 600; }
         .main-table .ip-cell { font-family: monospace; font-size: 0.8rem; color: #059669; }
         .main-table .obs-cell { font-size: 0.78rem; color: var(--text-muted); }
@@ -547,7 +552,6 @@
         .rpt-badge-manut  { background: #fee2e2 !important; color: #991b1b !important; border-radius: 3px; padding: 1px 6px; font-size: 0.7rem; font-weight: 700; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         .rpt-monitor-cell { color: #059669 !important; font-weight: 600; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
-        /* Cabeçalho de companhia no relatório — fundo mais escuro */
         .rpt-cia-header {
             background: #0f172a !important;
             color: #fff !important;
@@ -599,11 +603,131 @@
         .rpt-assinatura small { font-size: 0.63rem; color: #64748b; display: block; margin-top: 2px; }
         .rpt-assinaturas { display: flex; gap: 52px; align-items: flex-end; }
 
+        /* ══════════════════════════════════════════════
+           MODAL PRÉ-VISUALIZAÇÃO DE IMPRESSÃO
+        ══════════════════════════════════════════════ */
+        #preview-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(8, 14, 32, 0.88);
+            z-index: 99990;
+            backdrop-filter: blur(6px);
+            overflow-y: auto;
+            padding: 20px 12px 40px;
+        }
+        #preview-overlay.ativo { display: block; }
+
+        #preview-box {
+            max-width: 1080px;
+            margin: 0 auto;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 40px 100px rgba(0,0,0,0.6);
+            animation: toastIn 0.2s ease;
+        }
+
+        /* Topbar */
+        #preview-topbar {
+            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+            padding: 14px 20px;
+            display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+        }
+        .pvw-title { font-family: 'Barlow Condensed', sans-serif; font-size: 1rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #fff; flex: 1; min-width: 160px; }
+        .pvw-sub   { font-size: 0.68rem; color: rgba(255,255,255,0.55); }
+
+        .btn-pvw {
+            font-family: 'Barlow Condensed', sans-serif; font-size: 0.8rem; font-weight: 800;
+            letter-spacing: 1.5px; text-transform: uppercase; padding: 8px 20px;
+            border-radius: 7px; border: none; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+        }
+        .btn-pvw-print { background: #fff; color: #1e3a8a; }
+        .btn-pvw-print:hover { background: #dbeafe; }
+        .btn-pvw-pdf { background: linear-gradient(135deg, #dc2626, #991b1b); color: #fff; box-shadow: 0 2px 8px rgba(220,38,38,0.4); }
+        .btn-pvw-pdf:hover { filter: brightness(1.12); }
+        .btn-pvw-close { background: rgba(255,255,255,0.14); color: #fff; border: 1px solid rgba(255,255,255,0.25); }
+        .btn-pvw-close:hover { background: rgba(255,255,255,0.25); }
+
+        /* Stats bar */
+        #preview-stats {
+            background: #0f172a;
+            padding: 9px 20px;
+            display: flex; gap: 0; align-items: center; flex-wrap: wrap;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .pvw-stat {
+            display: flex; align-items: center; gap: 6px;
+            font-family: 'Barlow Condensed', sans-serif; font-size: 0.8rem; font-weight: 700;
+            color: rgba(255,255,255,0.6); padding: 0 14px;
+        }
+        .pvw-stat:not(:last-child) { border-right: 1px solid rgba(255,255,255,0.1); }
+        .pvw-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .pvw-val { font-size: 1.05rem; font-weight: 800; color: #fff; }
+
+        /* Papel */
+        #preview-paper-wrap { background: #475569; padding: 20px 18px; }
+
+        .pvw-page {
+            background: #fff;
+            border-radius: 3px;
+            padding: 26px 30px 22px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            font-family: 'Barlow', Arial, sans-serif;
+            font-size: 0.75rem; color: #1e293b; line-height: 1.4;
+        }
+
+        /* Cabeçalho da folha */
+        .pvw-rh { display: flex; align-items: center; gap: 12px; border-bottom: 3px solid #1e3a8a; padding-bottom: 10px; margin-bottom: 12px; }
+        .pvw-rh-brasao { width: 46px; height: 46px; flex-shrink: 0; background: linear-gradient(135deg, #1e3a8a, #1d4ed8); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: 0.78rem; font-family: 'Barlow Condensed', sans-serif; }
+        .pvw-rh-texto { flex: 1; text-align: center; }
+        .pvw-rh-gov { font-size: 0.56rem; letter-spacing: 2px; text-transform: uppercase; color: #475569; margin: 0; }
+        .pvw-rh-org { font-size: 0.73rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #1e293b; margin: 0; }
+        .pvw-rh-uni { font-size: 0.63rem; color: #475569; margin: 0; }
+        .pvw-rh-doc { display: inline-block; margin-top: 4px; font-size: 0.64rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #1e3a8a; border-top: 1px solid #bfdbfe; border-bottom: 1px solid #bfdbfe; padding: 2px 8px; }
+        .pvw-rh-meta { text-align: right; font-size: 0.58rem; color: #64748b; border-left: 2px solid #bfdbfe; padding-left: 12px; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+        .pvw-rh-meta strong { font-size: 0.72rem; font-weight: 800; color: #1e3a8a; letter-spacing: 1px; text-transform: uppercase; }
+        .pvw-rh-meta span { font-size: 0.55rem; color: #94a3b8; }
+        .pvw-rh-meta em { font-size: 0.6rem; color: #475569; font-style: normal; font-weight: 600; }
+
+        /* Tabela da folha */
+        .pvw-table { width: 100%; border-collapse: collapse; font-size: 0.7rem; margin-top: 8px; }
+        .pvw-table thead tr { background: #1e3a8a; }
+        .pvw-table thead th { padding: 6px 8px; color: #fff; font-family: 'Barlow Condensed', sans-serif; font-size: 0.6rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; border: 1px solid #1e3a8a; }
+        .pvw-table tbody td { padding: 5px 7px; border: 1px solid #e2e8f0; color: #1e293b; vertical-align: middle; }
+        .pvw-cia-row td { color: #fff !important; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 0.67rem; letter-spacing: 2px; text-transform: uppercase; border: none !important; }
+        .pvw-setor-row td { background: #1e3a8a !important; color: #fff !important; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 0.6rem; letter-spacing: 1.5px; text-transform: uppercase; padding-left: 20px !important; border: none !important; }
+        .pvw-z  { background: #f8fafc !important; }
+        .pvw-id  { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; color: #1d4ed8 !important; }
+        .pvw-ip  { font-family: monospace; color: #059669 !important; font-size: 0.65rem; }
+        .pvw-obs { color: #64748b !important; font-size: 0.65rem; }
+        .pvw-mon { font-weight: 600; }
+        .pvw-badge { border-radius: 3px; padding: 2px 6px; font-size: 0.61rem; font-weight: 700; font-family: 'Barlow Condensed', sans-serif; letter-spacing: 1px; white-space: nowrap; }
+        .pvw-badge-otimo { background: #dcfce7; color: #166534; }
+        .pvw-badge-bom   { background: #fef9c3; color: #854d0e; }
+        .pvw-badge-manut { background: #fee2e2; color: #991b1b; }
+
+        /* Resumo */
+        .pvw-resumo-wrap { display: flex; justify-content: flex-end; margin-top: 12px; }
+        .pvw-resumo { width: 220px; border: 1px solid #e2e8f0; border-radius: 5px; overflow: hidden; font-size: 0.68rem; }
+        .pvw-resumo-title { background: #1e3a8a; color: #fff; text-align: center; font-weight: 700; font-size: 0.6rem; letter-spacing: 2px; text-transform: uppercase; padding: 4px; font-family: 'Barlow Condensed', sans-serif; }
+        .pvw-resumo-row { display: flex; justify-content: space-between; padding: 3px 10px; border-bottom: 1px solid #f1f5f9; }
+        .pvw-resumo-row.total { background: #f8fafc; font-weight: 700; border-bottom: none; }
+
+        /* Rodapé da folha */
+        .pvw-footer { margin-top: 16px; border-top: 2px solid #1e3a8a; padding-top: 10px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .pvw-footer-left { font-size: 0.58rem; color: #64748b; line-height: 1.7; }
+        .pvw-footer-left strong { display: block; color: #1e293b; font-size: 0.62rem; margin-bottom: 2px; }
+        .pvw-assinaturas { display: flex; gap: 32px; }
+        .pvw-assinatura { text-align: center; }
+        .pvw-assinatura .linha { border-top: 1px solid #334155; width: 150px; margin: 28px auto 4px; }
+        .pvw-assinatura p     { margin: 0; font-size: 0.6rem; font-weight: 700; color: #1e293b; }
+        .pvw-assinatura small { font-size: 0.54rem; color: #64748b; display: block; margin-top: 1px; }
+
         @media print {
             @page { size: landscape; margin: 1.2cm 1cm; }
             body { background: white !important; color: black !important; font-size: 9pt; font-family: 'Barlow', Arial, sans-serif; }
             .no-print, .btn-tool, .btn-tbl, .search-input, .control-panel, .app-header,
             .table-card-header, .table-footer { display: none !important; }
+            #preview-overlay { display: none !important; }
             .relatorio-header { display: block !important; margin-bottom: 12px; }
             .table-card { border: none !important; background: white !important; box-shadow: none !important; }
             .app-body { padding: 0 !important; }
@@ -612,7 +736,6 @@
                               font-size: 0.68rem; letter-spacing: 1.5px; text-transform: uppercase;
                               -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .main-table td { border: 1px solid #e2e8f0 !important; padding: 5px 8px !important; color: #1e293b !important; font-size: 0.78rem; }
-            /* Rodapé nunca quebra */
             .relatorio-footer { display: block !important; }
             .rpt-footer-wrap  { page-break-inside: avoid; break-inside: avoid; }
         }
@@ -638,6 +761,35 @@
         <div class="confirm-btns">
             <button class="btn-confirm-cancel" id="confirm-cancel">Cancelar</button>
             <button class="btn-confirm-ok" id="confirm-ok">Excluir</button>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     MODAL PRÉ-VISUALIZAÇÃO
+══════════════════════════════════════════════ -->
+<div id="preview-overlay">
+    <div id="preview-box">
+        <!-- Topbar -->
+        <div id="preview-topbar">
+            <div>
+                <div class="pvw-title">🖨 Pré-visualização do Relatório</div>
+                <div class="pvw-sub" id="pvw-sub">—</div>
+            </div>
+            <button class="btn-pvw btn-pvw-print" onclick="executarImprimir()">🖨 Imprimir agora</button>
+            <button class="btn-pvw btn-pvw-pdf"   onclick="executarPDF()">📄 Gerar PDF</button>
+            <button class="btn-pvw btn-pvw-close" onclick="fecharPreview()">✕ Fechar</button>
+        </div>
+        <!-- Stats -->
+        <div id="preview-stats">
+            <div class="pvw-stat"><div class="pvw-dot" style="background:#22c55e;"></div>Ótimo:<span class="pvw-val" id="pvw-n-otimo">0</span></div>
+            <div class="pvw-stat"><div class="pvw-dot" style="background:#f59e0b;"></div>Bom:<span class="pvw-val" id="pvw-n-bom">0</span></div>
+            <div class="pvw-stat"><div class="pvw-dot" style="background:#ef4444;"></div>Manutenção:<span class="pvw-val" id="pvw-n-manut">0</span></div>
+            <div class="pvw-stat" style="margin-left:auto;border-right:none;">Total:<span class="pvw-val" id="pvw-n-total">0</span>equipamento(s)</div>
+        </div>
+        <!-- Folha simulada -->
+        <div id="preview-paper-wrap">
+            <div class="pvw-page" id="pvw-page"></div>
         </div>
     </div>
 </div>
@@ -696,6 +848,9 @@
                 <button class="btn-sector pcs" onclick="filtrarPorSetor('P-5', this)">P-5</button>
                 <button class="btn-sector pcs" onclick="filtrarPorSetor('P-6', this)">P-6</button>
                 <button class="btn-sector pcs" onclick="filtrarPorSetor('NTI', this)">NTI</button>
+                <!-- ✅ NOVOS BOTÕES -->
+                <button class="btn-sector pcs-subcmd" onclick="filtrarPorSetor('SUB CMD', this)">Sub Cmd</button>
+                <button class="btn-sector pcs-cmd" onclick="filtrarPorSetor('CMD', this)">Cmd</button>
             </div>
         </div>
 
@@ -736,7 +891,9 @@
             <div class="layer-btns">
                 <button class="btn-sector city" onclick="filtrarPorCidade('PB', 'Pimenta Bueno', this)">📍 Pimenta Bueno</button>
                 <button class="btn-sector city" onclick="filtrarPorCidade('ESP', 'Espigão', this)">📍 Espigão</button>
-                <button class="btn-sector city" onclick="filtrarPorCidade('PAR', 'Parecis', this)">📍 Parecis</button>
+                <button class="btn-sector city" onclick="filtrarPorCidade('AND', 'Andreazza', this)">📍 Andreazza</button>
+                <button class="btn-sector city" onclick="filtrarPorCidade('SF', 'São Felipe', this)">📍 São Felipe</button>
+                <button class="btn-sector city" onclick="filtrarPorCidade('PRIM', 'Primavera', this)">📍 Primavera</button>
             </div>
         </div>
 
@@ -753,7 +910,7 @@
             <span class="session-title" id="titulo-sessao">Visão Geral</span>
             <div class="spacer"></div>
             <input type="text" class="search-input" id="inputBusca" placeholder="🔍 Buscar usuário, ID, IP..." onkeyup="filtrarTabela()">
-            <button class="btn-tool" onclick="imprimirRelatorio()">🖨 Imprimir</button>
+            <button class="btn-tool" onclick="abrirPreview()">🖨 Imprimir</button>
             <button class="btn-tool danger" onclick="salvarPDF()">📄 PDF</button>
             <button class="btn-tool primary" id="btnNovoRegistro" onclick="abrirModalCadastro()">+ Novo Registro</button>
         </div>
@@ -882,6 +1039,12 @@
         'PARECIS':       { id: 'PAR-' }
     };
 
+    const CORES_CIA = {
+        'PCS': '#1e3a8a', '1ª CIA': '#4c1d95', '2ª CIA': '#0e7490',
+        '3ª CIA': '#065f46', '4ª CIA': '#9a3412', '5ª CIA': '#831843'
+    };
+    const ORDEM_CIAS = ['PCS', '1ª CIA', '2ª CIA', '3ª CIA', '4ª CIA', '5ª CIA'];
+
     function updateClock() {
         const now = new Date();
         document.getElementById('clock').innerText = now.toLocaleTimeString('pt-BR');
@@ -1005,7 +1168,6 @@
         }).join('');
     }
 
-    // ── TOAST ──────────────────────────────────────
     function toast(msg, tipo = 'sucesso') {
         const icons = { sucesso: '✅', erro: '❌', info: 'ℹ️' };
         const el = document.createElement('div');
@@ -1018,7 +1180,6 @@
         }, 3200);
     }
 
-    // ── CONFIRM CUSTOMIZADO ─────────────────────────
     function confirmar(msg) {
         return new Promise(resolve => {
             const overlay = document.getElementById('confirm-overlay');
@@ -1040,7 +1201,6 @@
         });
     }
 
-    // ── MODAL: limpa backdrop sem bugs ─────────────
     function fecharModalLimpo() {
         const modalEl = document.getElementById('modalCadastro');
         const inst = bootstrap.Modal.getInstance(modalEl);
@@ -1163,7 +1323,6 @@
         desenharLinhas(filtrados);
     }
 
-    // Detecta a qual companhia pertence um ID
     function getCia(idTexto) {
         const up = idTexto.toUpperCase();
         if (up.startsWith('5CIA')) return '5ª CIA';
@@ -1174,16 +1333,155 @@
         return 'PCS';
     }
 
-    // Detecta o setor dentro da companhia (P1, P2, NTI, etc.)
     function getSetorLabel(idTexto) {
         const up = idTexto.toUpperCase();
-        // Para CIAs: "1CIA-P1-XX" → pega a parte do meio
         const ciaMatch = up.match(/^\dCIA-([^-]+)/);
         if (ciaMatch) return ciaMatch[1];
-        // Para PCS: "P1-XX" → pega primeiro segmento
         return up.split('-')[0] || 'OUTROS';
     }
 
+    // ── Agrupa as linhas atuais da tabela por CIA/Setor ────
+    function agruparLinhas() {
+        const linhas = Array.from(document.getElementById('corpo-tabela').querySelectorAll('tr'));
+        const cias = {};
+        const totais = { OTIMO: 0, BOM: 0, 'MANUTENÇÃO': 0 };
+
+        linhas.forEach(linha => {
+            if (!linha.cells || linha.cells.length < 7) return;
+            const id    = linha.cells[1]?.innerText.trim() || '';
+            const sit   = linha.cells[5]?.innerText.trim().toUpperCase() || '';
+            const cia   = getCia(id);
+            const setor = getSetorLabel(id);
+
+            if (!cias[cia]) cias[cia] = {};
+            if (!cias[cia][setor]) cias[cia][setor] = [];
+            cias[cia][setor].push(linha);
+            if (totais.hasOwnProperty(sit)) totais[sit]++;
+        });
+
+        return { cias, totais };
+    }
+
+    // ══════════════════════════════════════════════
+    // PRÉ-VISUALIZAÇÃO
+    // ══════════════════════════════════════════════
+    function abrirPreview() {
+        const linhas = document.getElementById('corpo-tabela').querySelectorAll('tr');
+        if (!linhas.length || linhas[0]?.innerText.includes('Nenhum') || linhas[0]?.innerText.includes('Carregando')) {
+            toast('Nenhum dado para visualizar.', 'info'); return;
+        }
+
+        const titulo = document.getElementById('titulo-sessao').innerText;
+        const agora  = new Date().toLocaleString('pt-BR');
+        const { cias, totais } = agruparLinhas();
+        const total = totais.OTIMO + totais.BOM + totais['MANUTENÇÃO'];
+
+        // Atualiza stats da barra
+        document.getElementById('pvw-sub').innerText     = titulo;
+        document.getElementById('pvw-n-otimo').innerText = totais.OTIMO;
+        document.getElementById('pvw-n-bom').innerText   = totais.BOM;
+        document.getElementById('pvw-n-manut').innerText = totais['MANUTENÇÃO'];
+        document.getElementById('pvw-n-total').innerText = total;
+
+        // Monta corpo da tabela simulada
+        let zebraIdx = 0, corpoHTML = '';
+        ORDEM_CIAS.filter(c => cias[c]).forEach(cia => {
+            const cor    = CORES_CIA[cia] || '#1e3a8a';
+            const qtdCia = Object.values(cias[cia]).reduce((s, a) => s + a.length, 0);
+            corpoHTML += `<tr class="pvw-cia-row" style="background:${cor};border-left:5px solid rgba(255,255,255,0.3);">
+                <td colspan="6">◆ ${cia} &nbsp;·&nbsp; ${qtdCia} equipamento(s)</td></tr>`;
+
+            for (const setor in cias[cia]) {
+                corpoHTML += `<tr class="pvw-setor-row"><td colspan="6">▪ Setor: ${setor} &nbsp;·&nbsp; ${cias[cia][setor].length} equipamento(s)</td></tr>`;
+                cias[cia][setor].forEach(l => {
+                    const id  = l.cells[1]?.innerText.trim() || '';
+                    const usr = l.cells[2]?.innerText.trim() || '';
+                    const mon = l.cells[3]?.innerText.trim() || '—';
+                    const ip  = l.cells[4]?.innerText.trim() || '—';
+                    const sit = l.cells[5]?.innerText.trim().toUpperCase() || '';
+                    const obs = l.cells[6]?.innerText.trim() || '—';
+                    const z   = zebraIdx++ % 2 !== 0 ? 'pvw-z' : '';
+                    const bdg = sit === 'OTIMO' ? 'pvw-badge-otimo' : sit === 'BOM' ? 'pvw-badge-bom' : 'pvw-badge-manut';
+                    const sl  = sit === 'OTIMO' ? 'Ótimo' : sit === 'BOM' ? 'Bom' : 'Manutenção';
+                    corpoHTML += `<tr class="${z}">
+                        <td class="pvw-id">${id}</td>
+                        <td>${usr}</td>
+                        <td class="pvw-mon">${mon}</td>
+                        <td class="pvw-ip">${ip}</td>
+                        <td style="text-align:center;"><span class="pvw-badge ${bdg}">${sl}</span></td>
+                        <td class="pvw-obs">${obs}</td>
+                    </tr>`;
+                });
+            }
+        });
+
+        // Monta a folha completa
+        document.getElementById('pvw-page').innerHTML = `
+            <div class="pvw-rh">
+                <div class="pvw-rh-brasao">NTI</div>
+                <div class="pvw-rh-texto">
+                    <p class="pvw-rh-gov">Governo do Estado de Rondônia</p>
+                    <p class="pvw-rh-org">Polícia Militar do Estado de Rondônia</p>
+                    <p class="pvw-rh-uni">4º Batalhão de Polícia Militar — Cacoal / RO</p>
+                    <span class="pvw-rh-doc">Inventário e Controle de Equipamentos de TI</span>
+                </div>
+                <div class="pvw-rh-meta">
+                    <strong>${titulo}</strong>
+                    <span>Gerado em:</span>
+                    <em>${agora}</em>
+                </div>
+            </div>
+            <table class="pvw-table">
+                <thead><tr>
+                    <th style="width:10%">Identificação</th>
+                    <th style="width:22%">Usuário</th>
+                    <th style="width:18%">Monitor / Tombamento</th>
+                    <th style="width:12%">Endereço IP</th>
+                    <th style="width:10%">Situação</th>
+                    <th>Observações</th>
+                </tr></thead>
+                <tbody>${corpoHTML}</tbody>
+            </table>
+            <div class="pvw-resumo-wrap">
+                <div class="pvw-resumo">
+                    <div class="pvw-resumo-title">Resumo do Relatório</div>
+                    <div class="pvw-resumo-row"><span>🟢 Ótimo</span><strong>${totais.OTIMO}</strong></div>
+                    <div class="pvw-resumo-row"><span>🟡 Bom</span><strong>${totais.BOM}</strong></div>
+                    <div class="pvw-resumo-row"><span>🔴 Manutenção</span><strong>${totais['MANUTENÇÃO']}</strong></div>
+                    <div class="pvw-resumo-row total"><span>Total Geral</span><strong>${total}</strong></div>
+                </div>
+            </div>
+            <div class="pvw-footer">
+                <div class="pvw-footer-left">
+                    <strong>4º Batalhão de Polícia Militar</strong>
+                    Seção de Informática — NTI<br>Cacoal / RO
+                </div>
+                <div class="pvw-assinaturas">
+                    <div class="pvw-assinatura"><div class="linha"></div><p>Responsável Técnico</p><small>Seção de Informática — 4º BPM</small></div>
+                    <div class="pvw-assinatura"><div class="linha"></div><p>Comandante / Chefe</p><small>Visto e Ciência</small></div>
+                </div>
+            </div>`;
+
+        const ov = document.getElementById('preview-overlay');
+        ov.classList.add('ativo');
+        ov.scrollTop = 0;
+    }
+
+    function fecharPreview() {
+        document.getElementById('preview-overlay').classList.remove('ativo');
+    }
+
+    // Fecha ao clicar no fundo
+    document.getElementById('preview-overlay').addEventListener('click', function(e) {
+        if (e.target === this) fecharPreview();
+    });
+
+    function executarImprimir() { fecharPreview(); setTimeout(imprimirRelatorio, 220); }
+    function executarPDF()      { fecharPreview(); setTimeout(salvarPDF, 220); }
+
+    // ══════════════════════════════════════════════
+    // RELATÓRIO (impressão / PDF) — original intacto
+    // ══════════════════════════════════════════════
     function prepararConteudoRelatorio() {
         const agora = new Date();
         document.getElementById('data-relatorio-texto').innerText = agora.toLocaleString('pt-BR');
@@ -1198,7 +1496,6 @@
 
         const htmlOriginal = tabelaOriginal.innerHTML;
 
-        // Estrutura: { 'PCS': { 'P1': [...linhas], 'P2': [...] }, '1ª CIA': { ... } }
         const companhias = {};
         const ordemCias = ['PCS', '1ª CIA', '2ª CIA', '3ª CIA', '4ª CIA', '5ª CIA'];
         const totais = { 'OTIMO': 0, 'BOM': 0, 'MANUTENÇÃO': 0 };
@@ -1218,7 +1515,6 @@
             zebraIdx++;
             const badgeClass = situacao === 'OTIMO' ? 'rpt-badge-otimo' : situacao === 'BOM' ? 'rpt-badge-bom' : 'rpt-badge-manut';
 
-            // Aplica cor verde na célula monitor (índice 3)
             let linhaMod = linha.outerHTML
                 .replace(/class="([^"]*badge-status[^"]*)"/, `class="badge-status ${badgeClass}"`)
                 .replace(/<tr class="[^"]*"/, `<tr class="${zebraClass}"`)
@@ -1228,7 +1524,6 @@
             if (totais.hasOwnProperty(situacao)) totais[situacao]++;
         });
 
-        // Cores por companhia
         const coresCia = {
             'PCS':    '#1e3a8a',
             '1ª CIA': '#4c1d95',
@@ -1290,21 +1585,16 @@
         const footer  = document.getElementById('relatorio-footer');
         const tb      = document.getElementById('corpo-tabela');
 
-        // Aplica conteúdo formatado
         tb.innerHTML = resultado.novoConteudo;
-
-        // Mostra header/footer do relatório
         header.style.display = 'flex';
         footer.style.display = 'block';
 
-        // Esconde tudo que não é relatório dentro do app-body
         const esconder = document.querySelectorAll(
             '.control-panel, .table-card-header, .table-footer, .no-print'
         );
         esconder.forEach(el => el.setAttribute('data-pdf-hidden', el.style.display || ''));
         esconder.forEach(el => el.style.display = 'none');
 
-        // Remove padding/margin do app-body temporariamente
         const appBody = document.querySelector('.app-body');
         const paddingOrig = appBody.style.padding;
         appBody.style.padding = '0';
@@ -1328,7 +1618,6 @@
             header.style.display = 'none';
             footer.style.display = 'none';
             appBody.style.padding = paddingOrig;
-            // Restaura elementos escondidos
             esconder.forEach(el => {
                 el.style.display = el.getAttribute('data-pdf-hidden') || '';
                 el.removeAttribute('data-pdf-hidden');

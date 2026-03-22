@@ -153,6 +153,12 @@ ipcMain.handle('buscar-por-setor', async (event, setor) => {
 
 // ============================================================
 // BUSCAR POR CIDADE — ILIKE direto nas 3 tabelas
+// Prefixos suportados:
+//   PB   → Pimenta Bueno
+//   ESP  → Espigão
+//   AND  → Andreazza
+//   SF   → São Felipe
+//   PRIM → Primavera
 // ============================================================
 ipcMain.handle('buscar-por-cidade', async (event, prefixo) => {
     try {
@@ -233,7 +239,16 @@ ipcMain.handle('excluir-computador', async (event, { id, identificacao }) => {
 // ============================================================
 app.whenReady().then(() => {
     createWindow();
-    configurarUpdater();
+
+    // Updater só roda quando o app está empacotado (build de produção).
+    // Em modo dev (npm start / electron .) app.isPackaged === false,
+    // o que causaria o aviso "Skip checkForUpdates because application
+    // is not packed and dev update config is not forced".
+    if (app.isPackaged) {
+        configurarUpdater();
+    } else {
+        log.info('Modo desenvolvimento — auto-updater desativado.');
+    }
 });
 
 app.on('window-all-closed', () => {
