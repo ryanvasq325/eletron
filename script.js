@@ -190,7 +190,13 @@ function getRowClass(id) {
     return 'row-other';
 }
 
-// ── DESENHAR LINHAS (REVISADO) ────────────────────
+// ══════════════════════════════════════════════════════════
+// CORREÇÃO URGENTE - IMAGEM QUEBRADA NA TABELA
+// O problema: base64 está sendo salvo SEM o prefixo correto
+// ══════════════════════════════════════════════════════════
+
+// SUBSTITUA a função desenharLinhas INTEIRA por esta versão:
+
 function desenharLinhas(dados) {
     const corpo = document.getElementById('corpo-tabela');
     document.getElementById('contador-registros').innerText = `${dados.length} registro(s)`;
@@ -204,10 +210,44 @@ function desenharLinhas(dados) {
         const badgeClass = item.situacao === 'OTIMO' ? 'badge-otimo' : item.situacao === 'BOM' ? 'badge-bom' : 'badge-manut';
         const rowClass = getRowClass(item.identificacao);
 
-        // Lógica de renderização da foto corrigida
+        // ═══ CORREÇÃO DO BASE64 - ADICIONA PREFIXO SE FALTAR ═══
         let thumbHTML = `<span class="thumb-none" title="Sem foto">📷</span>`;
-        if (item.foto_base64 && item.foto_base64.length > 50) {
-            thumbHTML = `<img class="thumb-img" src="${item.foto_base64}" alt="Foto" onclick="abrirLightbox('${item.foto_base64}')" title="Clique para ampliar">`;
+        
+        if (item.foto_base64) {
+            try {
+                let fotoBase64 = String(item.foto_base64).trim();
+                
+                if (fotoBase64 && fotoBase64 !== 'null' && fotoBase64.length > 100) {
+                    
+                    // Se NÃO começa com data:, adiciona o prefixo correto
+                    if (!fotoBase64.startsWith('data:')) {
+                        if (fotoBase64.startsWith('/9j/')) {
+                            fotoBase64 = 'data:image/jpeg;base64,' + fotoBase64;
+                        } else if (fotoBase64.startsWith('iVBORw')) {
+                            fotoBase64 = 'data:image/png;base64,' + fotoBase64;
+                        } else if (fotoBase64.startsWith('R0lG')) {
+                            fotoBase64 = 'data:image/gif;base64,' + fotoBase64;
+                        } else if (fotoBase64.startsWith('UklGR')) {
+                            fotoBase64 = 'data:image/webp;base64,' + fotoBase64;
+                        } else {
+                            fotoBase64 = 'data:image/jpeg;base64,' + fotoBase64;
+                        }
+                    }
+                    
+                    const fotoSrcSafe = fotoBase64.replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+                    
+                    thumbHTML = `<img 
+                        class="thumb-img" 
+                        src="${fotoSrcSafe}" 
+                        alt="Foto ${item.identificacao}" 
+                        onclick="abrirLightbox('${fotoSrcSafe}')" 
+                        title="Clique para ampliar"
+                        onerror="this.outerHTML='<span class=\\'thumb-none\\' title=\\'Erro\\'>⚠️</span>';"
+                    >`;
+                }
+            } catch (e) {
+                thumbHTML = `<span class="thumb-none" title="Erro">⚠️</span>`;
+            }
         }
 
         return `<tr class="${rowClass}">
