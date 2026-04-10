@@ -26,6 +26,18 @@ const CORES_CIA = {
 };
 const ORDEM_CIAS = ['PCS', '1ª CIA', '2ª CIA', '3ª CIA', '4ª CIA', '5ª CIA'];
 
+// ── SANITIZAÇÃO XSS ──────────────────────────────
+// CORREÇÃO: sanitiza qualquer dado antes de inserir no innerHTML
+function esc(str) {
+    if (str === null || str === undefined || str === '' || str === 'null') return '—';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 // ── RELÓGIO ─────────────────────────────────────
 function updateClock() {
     const now = new Date();
@@ -34,12 +46,15 @@ function updateClock() {
     if (clockEl) clockEl.innerText = now.toLocaleTimeString('pt-BR');
     if (dateEl) dateEl.innerText = now.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
 }
-setInterval(updateClock, 1000);
+// MELHORIA: guardar referência para limpar o intervalo quando necessário
+const clockInterval = setInterval(updateClock, 1000);
+window.addEventListener('beforeunload', () => clearInterval(clockInterval));
 updateClock();
 
 window.onload = async () => {
     await renderizarTabela();
     configurarMonitorDePrefixo();
+    configurarBusca();
 };
 
 // ── FOTO: UPLOAD E PREVIEW ───────────────────────
@@ -102,12 +117,22 @@ function abrirLightbox(src) {
     document.getElementById('lightbox-img').src = src;
     document.getElementById('lightbox-overlay').classList.add('ativo');
 }
+
+// CORREÇÃO: função que lê src via dataset em vez de inline onclick com base64
+function abrirLightboxDe(el) {
+    const src = el.dataset.src;
+    if (src) abrirLightbox(src);
+}
+
 function fecharLightbox() {
     document.getElementById('lightbox-overlay').classList.remove('ativo');
     document.getElementById('lightbox-img').src = '';
 }
 document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') fecharLightbox();
+    if (e.key === 'Escape') {
+        fecharLightbox();
+        fecharPreview();
+    }
 });
 
 // ── SETOR / FILTROS ──────────────────────────────
@@ -190,13 +215,24 @@ function getRowClass(id) {
     return 'row-other';
 }
 
-// ══════════════════════════════════════════════════════════
-// CORREÇÃO URGENTE - IMAGEM QUEBRADA NA TABELA
-// O problema: base64 está sendo salvo SEM o prefixo correto
-// ══════════════════════════════════════════════════════════
+// ── NORMALIZAR BASE64 DA FOTO ────────────────────
+function normalizarBase64(raw) {
+    if (!raw) return null;
+    let b = String(raw).trim();
+    if (!b || b === 'null' || b.length < 100) return null;
+    if (!b.startsWith('data:')) {
+        if (b.startsWith('/9j/'))   b = 'data:image/jpeg;base64,' + b;
+        else if (b.startsWith('iVBORw')) b = 'data:image/png;base64,' + b;
+        else if (b.startsWith('R0lG'))   b = 'data:image/gif;base64,' + b;
+        else if (b.startsWith('UklGR')) b = 'data:image/webp;base64,' + b;
+        else b = 'data:image/jpeg;base64,' + b;
+    }
+    return b;
+}
 
-// SUBSTITUA a função desenharLinhas INTEIRA por esta versão:
-
+// ── DESENHAR TABELA ──────────────────────────────
+// MELHORIA: usa DocumentFragment para melhor performance
+// CORREÇÃO: sanitização XSS com esc(), lightbox via data-src
 function desenharLinhas(dados) {
     const corpo = document.getElementById('corpo-tabela');
     document.getElementById('contador-registros').innerText = `${dados.length} registro(s)`;
@@ -206,67 +242,49 @@ function desenharLinhas(dados) {
         return;
     }
 
-    corpo.innerHTML = dados.map((item, index) => {
+    const fragment = document.createDocumentFragment();
+
+    dados.forEach((item, index) => {
         const badgeClass = item.situacao === 'OTIMO' ? 'badge-otimo' : item.situacao === 'BOM' ? 'badge-bom' : 'badge-manut';
         const rowClass = getRowClass(item.identificacao);
 
-        // ═══ CORREÇÃO DO BASE64 - ADICIONA PREFIXO SE FALTAR ═══
-        let thumbHTML = `<span class="thumb-none" title="Sem foto">📷</span>`;
-        
-        if (item.foto_base64) {
-            try {
-                let fotoBase64 = String(item.foto_base64).trim();
-                
-                if (fotoBase64 && fotoBase64 !== 'null' && fotoBase64.length > 100) {
-                    
-                    // Se NÃO começa com data:, adiciona o prefixo correto
-                    if (!fotoBase64.startsWith('data:')) {
-                        if (fotoBase64.startsWith('/9j/')) {
-                            fotoBase64 = 'data:image/jpeg;base64,' + fotoBase64;
-                        } else if (fotoBase64.startsWith('iVBORw')) {
-                            fotoBase64 = 'data:image/png;base64,' + fotoBase64;
-                        } else if (fotoBase64.startsWith('R0lG')) {
-                            fotoBase64 = 'data:image/gif;base64,' + fotoBase64;
-                        } else if (fotoBase64.startsWith('UklGR')) {
-                            fotoBase64 = 'data:image/webp;base64,' + fotoBase64;
-                        } else {
-                            fotoBase64 = 'data:image/jpeg;base64,' + fotoBase64;
-                        }
-                    }
-                    
-                    const fotoSrcSafe = fotoBase64.replace(/'/g, '&#39;').replace(/"/g, '&quot;');
-                    
-                    thumbHTML = `<img 
-                        class="thumb-img" 
-                        src="${fotoSrcSafe}" 
-                        alt="Foto ${item.identificacao}" 
-                        onclick="abrirLightbox('${fotoSrcSafe}')" 
-                        title="Clique para ampliar"
-                        onerror="this.outerHTML='<span class=\\'thumb-none\\' title=\\'Erro\\'>⚠️</span>';"
-                    >`;
-                }
-            } catch (e) {
-                thumbHTML = `<span class="thumb-none" title="Erro">⚠️</span>`;
-            }
+        // CORREÇÃO: foto via data-src em vez de inline onclick com base64
+        let thumbHTML = `<span class="thumb-none" title="Sem foto" aria-label="Sem foto">📷</span>`;
+        const fotoSrc = normalizarBase64(item.foto_base64);
+        if (fotoSrc) {
+            thumbHTML = `<img
+                class="thumb-img"
+                src="${fotoSrc}"
+                alt="Foto do equipamento ${esc(item.identificacao)}"
+                data-src="${fotoSrc}"
+                onclick="abrirLightboxDe(this)"
+                title="Clique para ampliar"
+                onerror="this.outerHTML='<span class=\\'thumb-none\\' title=\\'Erro ao carregar\\'>⚠️</span>';"
+            >`;
         }
 
-        return `<tr class="${rowClass}">
-                <td class="num">${index + 1}</td>
-                <td class="thumb-cell no-print">${thumbHTML}</td>
-                <td class="id-cell">${item.identificacao}</td>
-                <td>${item.usuario}</td>
-                <td class="monitor-cell">${item.monitor_info || '—'}</td>
-                <td class="ip-cell">${item.ip_maquina || '—'}</td>
-                <td style="text-align:center;">
-                    <span class="badge-status ${badgeClass} badge-input">${item.situacao}</span>
-                </td>
-                <td class="obs-cell">${item.observacoes || '—'}</td>
-                <td class="no-print" style="text-align:center; white-space:nowrap;">
-                    <button class="btn-tbl edit" onclick="prepararEdicao(${item.id})" title="Editar">✏️</button>
-                    <button class="btn-tbl del"  onclick="excluir(${item.id})"        title="Excluir">🗑️</button>
-                </td>
-            </tr>`;
-    }).join('');
+        const tr = document.createElement('tr');
+        tr.className = rowClass;
+        // CORREÇÃO: todos os dados sanitizados com esc()
+        tr.innerHTML = `
+            <td class="num">${index + 1}</td>
+            <td class="thumb-cell no-print">${thumbHTML}</td>
+            <td class="id-cell">${esc(item.identificacao)}</td>
+            <td>${esc(item.usuario)}</td>
+            <td class="monitor-cell">${esc(item.monitor_info)}</td>
+            <td class="ip-cell">${esc(item.ip_maquina)}</td>
+            <td style="text-align:center;">
+                <span class="badge-status ${badgeClass} badge-input">${esc(item.situacao)}</span>
+            </td>
+            <td class="obs-cell">${esc(item.observacoes)}</td>
+            <td class="no-print" style="text-align:center; white-space:nowrap;">
+                <button class="btn-tbl edit" onclick="prepararEdicao(${item.id})" title="Editar registro" aria-label="Editar registro de ${esc(item.usuario)}">✏️</button>
+                <button class="btn-tbl del"  onclick="excluir(${item.id})"        title="Excluir registro" aria-label="Excluir registro de ${esc(item.usuario)}">🗑️</button>
+            </td>`;
+        fragment.appendChild(tr);
+    });
+
+    corpo.replaceChildren(fragment);
 }
 
 // ── TOAST ────────────────────────────────────────
@@ -274,7 +292,7 @@ function toast(msg, tipo = 'sucesso') {
     const icons = { sucesso: '✅', erro: '❌', info: 'ℹ️' };
     const el = document.createElement('div');
     el.className = `toast-msg ${tipo}`;
-    el.innerHTML = `<span class="toast-icon">${icons[tipo]}</span><span>${msg}</span>`;
+    el.innerHTML = `<span class="toast-icon">${icons[tipo]}</span><span>${esc(msg)}</span>`;
     document.getElementById('toast-container').appendChild(el);
     setTimeout(() => {
         el.classList.add('saindo');
@@ -315,6 +333,7 @@ function abrirModal() {
     bootstrap.Modal.getOrCreateInstance(modalEl).show();
 }
 
+// MELHORIA: carrega a foto do servidor apenas no momento da edição (lazy load)
 async function prepararEdicao(id) {
     const item = listaAtualComputadores.find(c => c.id == id);
     if (!item) { toast('Registro não encontrado.', 'erro'); return; }
@@ -327,13 +346,24 @@ async function prepararEdicao(id) {
     document.getElementById('situacao').value = item.situacao;
     document.getElementById('observacoes').value = item.observacoes || '';
 
-    // Carregar foto existente
-    carregarFotoExistente(item.foto_base64);
-
+    // Lazy load da foto: busca apenas quando abre a edição
+    removerFoto();
     document.getElementById('modalTitle').innerText = 'Editar Registro';
     document.getElementById('btnSalvar').className = 'btn-modal-save edit-mode';
     document.getElementById('btnSalvar').innerText = 'Atualizar Registro';
     abrirModal();
+
+    // Carrega a foto em background após abrir o modal
+    try {
+        const res = await window.api.buscarFoto({ id: item.id, identificacao: item.identificacao });
+        if (res && res.foto_base64) {
+            carregarFotoExistente(res.foto_base64);
+            // Guarda no item local para evitar re-busca
+            item.foto_base64 = res.foto_base64;
+        }
+    } catch (e) {
+        console.warn('Não foi possível carregar a foto:', e);
+    }
 }
 
 function abrirModalCadastro() {
@@ -378,10 +408,13 @@ async function excluir(id) {
     if (!item) return;
     const ok = await confirmar(`Excluir o registro de ${item.usuario}?`);
     if (!ok) return;
+    // CORREÇÃO: passa { id, identificacao } corretamente — alinhado com preload.js corrigido
     const res = await window.api.excluirComputador({ id, identificacao: item.identificacao });
     if (res.success) {
         toast('Registro excluído.', 'info');
         await atualizarVisualizacao();
+    } else {
+        toast('Erro ao excluir: ' + (res.error || 'erro desconhecido'), 'erro');
     }
 }
 
@@ -392,11 +425,30 @@ function configurarMonitorDePrefixo() {
     });
 }
 
+// MELHORIA: busca com debounce e filtro ampliado (IP + observações)
+// CORREÇÃO: placeholder dizia "IP..." mas não filtrava por IP
+function configurarBusca() {
+    const inputBusca = document.getElementById('inputBusca');
+    let debounceTimer;
+    inputBusca.addEventListener('input', () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(filtrarTabela, 250);
+    });
+}
+
 function filtrarTabela() {
-    const termo = document.getElementById('inputBusca').value.toLowerCase();
+    const termo = document.getElementById('inputBusca').value.toLowerCase().trim();
+    if (!termo) {
+        desenharLinhas(listaAtualComputadores);
+        return;
+    }
+    // CORREÇÃO: agora filtra também por IP e observações, como o placeholder indica
     const filtrados = listaAtualComputadores.filter(i =>
-        i.usuario.toLowerCase().includes(termo) ||
-        i.identificacao.toLowerCase().includes(termo)
+        (i.usuario || '').toLowerCase().includes(termo) ||
+        (i.identificacao || '').toLowerCase().includes(termo) ||
+        (i.ip_maquina || '').toLowerCase().includes(termo) ||
+        (i.observacoes || '').toLowerCase().includes(termo) ||
+        (i.monitor_info || '').toLowerCase().includes(termo)
     );
     desenharLinhas(filtrados);
 }
@@ -426,7 +478,6 @@ function agruparLinhas() {
 
     linhas.forEach(linha => {
         if (!linha.cells || linha.cells.length < 8) return;
-        // col 0=#, col 1=foto(no-print), col 2=id, col 3=usuário ...
         const id = linha.cells[2]?.innerText.trim() || '';
         const sit = linha.cells[6]?.innerText.trim().toUpperCase() || '';
         const cia = getCia(id);
@@ -462,20 +513,20 @@ function abrirPreview() {
         const cor = CORES_CIA[cia] || '#1e3a8a';
         const qtdCia = Object.values(cias[cia]).reduce((s, a) => s + a.length, 0);
         corpoHTML += `<tr class="pvw-cia-row" style="background:${cor};border-left:5px solid rgba(255,255,255,0.3);">
-                <td colspan="6">◆ ${cia} &nbsp;·&nbsp; ${qtdCia} equipamento(s)</td></tr>`;
+                <td colspan="6">◆ ${esc(cia)} &nbsp;·&nbsp; ${qtdCia} equipamento(s)</td></tr>`;
 
         for (const setor in cias[cia]) {
-            corpoHTML += `<tr class="pvw-setor-row"><td colspan="6">▪ Setor: ${setor} &nbsp;·&nbsp; ${cias[cia][setor].length} equipamento(s)</td></tr>`;
+            corpoHTML += `<tr class="pvw-setor-row"><td colspan="6">▪ Setor: ${esc(setor)} &nbsp;·&nbsp; ${cias[cia][setor].length} equipamento(s)</td></tr>`;
             cias[cia][setor].forEach(l => {
-                const id = l.cells[2]?.innerText.trim() || '';
-                const usr = l.cells[3]?.innerText.trim() || '';
-                const mon = l.cells[4]?.innerText.trim() || '—';
-                const ip = l.cells[5]?.innerText.trim() || '—';
-                const sit = l.cells[6]?.innerText.trim().toUpperCase() || '';
-                const obs = l.cells[7]?.innerText.trim() || '—';
+                const id  = esc(l.cells[2]?.innerText.trim());
+                const usr = esc(l.cells[3]?.innerText.trim());
+                const mon = esc(l.cells[4]?.innerText.trim());
+                const ip  = esc(l.cells[5]?.innerText.trim());
+                const sit = (l.cells[6]?.innerText.trim() || '').toUpperCase();
+                const obs = esc(l.cells[7]?.innerText.trim());
                 const z = zebraIdx++ % 2 !== 0 ? 'pvw-z' : '';
                 const bdg = sit === 'OTIMO' ? 'pvw-badge-otimo' : sit === 'BOM' ? 'pvw-badge-bom' : 'pvw-badge-manut';
-                const sl = sit === 'OTIMO' ? 'Ótimo' : sit === 'BOM' ? 'Bom' : 'Manutenção';
+                const sl  = sit === 'OTIMO' ? 'Ótimo' : sit === 'BOM' ? 'Bom' : 'Manutenção';
                 corpoHTML += `<tr class="${z}">
                         <td class="pvw-id">${id}</td>
                         <td>${usr}</td>
@@ -498,7 +549,7 @@ function abrirPreview() {
                     <span class="pvw-rh-doc">Inventário e Controle de Equipamentos de TI</span>
                 </div>
                 <div class="pvw-rh-meta">
-                    <strong>${titulo}</strong>
+                    <strong>${esc(titulo)}</strong>
                     <span>Gerado em:</span>
                     <em>${agora}</em>
                 </div>
@@ -591,9 +642,9 @@ function prepararConteudoRelatorio() {
     ciasPresentes.forEach(cia => {
         const cor = coresCia[cia] || '#1e3a8a';
         const totalCia = Object.values(companhias[cia]).reduce((s, arr) => s + arr.length, 0);
-        novoConteudo += `<tr><td colspan="9" class="rpt-cia-header" style="background:${cor} !important; border-left: 5px solid rgba(255,255,255,0.4);">◆ ${cia} &nbsp;·&nbsp; ${totalCia} equipamento(s)</td></tr>`;
+        novoConteudo += `<tr><td colspan="9" class="rpt-cia-header" style="background:${cor} !important; border-left: 5px solid rgba(255,255,255,0.4);">◆ ${esc(cia)} &nbsp;·&nbsp; ${totalCia} equipamento(s)</td></tr>`;
         for (const setor in companhias[cia]) {
-            novoConteudo += `<tr><td colspan="9" class="rpt-setor-header" style="padding-left:24px !important;">▪ Setor: ${setor} &nbsp;·&nbsp; ${companhias[cia][setor].length} equipamento(s)</td></tr>`;
+            novoConteudo += `<tr><td colspan="9" class="rpt-setor-header" style="padding-left:24px !important;">▪ Setor: ${esc(setor)} &nbsp;·&nbsp; ${companhias[cia][setor].length} equipamento(s)</td></tr>`;
             novoConteudo += companhias[cia][setor].join('');
         }
     });
@@ -622,14 +673,26 @@ function imprimirRelatorio() {
     tb.innerHTML = resultado.htmlOriginal;
 }
 
+// MELHORIA: html2pdf carregado dinamicamente (lazy) — não bloqueia o carregamento inicial
+async function carregarHtml2Pdf() {
+    if (window.html2pdf) return;
+    await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+        s.onload = resolve;
+        s.onerror = () => reject(new Error('Falha ao carregar html2pdf.js'));
+        document.head.appendChild(s);
+    });
+}
+
 async function salvarPDF() {
     const resultado = prepararConteudoRelatorio();
     if (!resultado) { toast('Nenhum dado para gerar PDF.', 'info'); return; }
 
     const loading = document.getElementById('pdf-loading');
-    const header = document.getElementById('relatorio-header');
-    const footer = document.getElementById('relatorio-footer');
-    const tb = document.getElementById('corpo-tabela');
+    const header  = document.getElementById('relatorio-header');
+    const footer  = document.getElementById('relatorio-footer');
+    const tb      = document.getElementById('corpo-tabela');
 
     tb.innerHTML = resultado.novoConteudo;
     header.style.display = 'flex';
@@ -648,6 +711,7 @@ async function salvarPDF() {
     const nomeArquivo = `Inventario_TI_4BPM_${titulo.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`;
 
     try {
+        await carregarHtml2Pdf();
         await html2pdf().set({
             margin: [10, 8, 12, 8],
             filename: nomeArquivo,
@@ -655,8 +719,9 @@ async function salvarPDF() {
             html2canvas: { scale: 2, useCORS: true, letterRendering: true },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
         }).from(appBody).save();
-    } catch (e) { toast('Erro ao gerar PDF: ' + e.message, 'erro'); }
-    finally {
+    } catch (e) {
+        toast('Erro ao gerar PDF: ' + e.message, 'erro');
+    } finally {
         loading.classList.remove('ativo');
         header.style.display = 'none';
         footer.style.display = 'none';
