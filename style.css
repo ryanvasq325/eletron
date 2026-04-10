@@ -13,115 +13,7 @@
     --text-muted:#64748b;
 }
 
-/* MELHORIA: dark mode automático baseado na preferência do sistema */
-@media (prefers-color-scheme: dark) {
-    :root {
-        --bg-main:   #0f172a;
-        --bg-card:   #1e293b;
-        --bg-panel:  #1e293b;
-        --border:    #334155;
-        --text-main: #f1f5f9;
-        --text-muted:#94a3b8;
-    }
 
-    .form-control, .form-select {
-        background: #0f172a;
-        color: #f1f5f9;
-        border-color: #334155;
-    }
-
-    .form-control:focus, .form-select:focus {
-        background: #0f172a;
-        color: #f1f5f9;
-    }
-
-    .form-select option {
-        background: #1e293b;
-    }
-
-    .modal-content {
-        background: #1e293b;
-    }
-
-    .modal-header, .modal-footer {
-        background: #0f172a;
-    }
-
-    .main-table thead tr {
-        background: #0f172a;
-    }
-
-    .main-table thead th {
-        color: #94a3b8;
-    }
-
-    .main-table tbody tr:hover {
-        background: #0f172a;
-    }
-
-    .panel-title-bar {
-        background: #0f172a;
-    }
-
-    .action-row {
-        background: #0f172a;
-    }
-
-    .table-card-header {
-        background: #0f172a;
-    }
-
-    .table-footer {
-        background: #0f172a;
-    }
-
-    .search-input {
-        background: #0f172a;
-        color: #f1f5f9;
-    }
-
-    .btn-tool {
-        background: #1e293b;
-        color: #f1f5f9;
-        border-color: #334155;
-    }
-
-    .btn-tool:hover {
-        background: #0f172a;
-    }
-
-    .btn-tool.danger {
-        background: #450a0a;
-        border-color: #991b1b;
-        color: #fca5a5;
-    }
-
-    .btn-tool.primary {
-        background: #1e3a8a;
-        border-color: #1d4ed8;
-        color: #bfdbfe;
-    }
-
-    .foto-upload-area {
-        background: #1e3a8a22;
-        border-color: #1d4ed8;
-    }
-
-    #confirm-box {
-        background: #1e293b;
-    }
-
-    .btn-confirm-cancel {
-        background: #0f172a;
-        border-color: #334155;
-        color: #94a3b8;
-    }
-
-    .btn-confirm-cancel:hover {
-        background: #334155;
-        color: #f1f5f9;
-    }
-}
 
 /* MELHORIA: respeitar preferência de redução de movimento (acessibilidade) */
 @media (prefers-reduced-motion: reduce) {
@@ -1000,7 +892,7 @@ html, body {
 /* MELHORIA: uso de especificidade em vez de !important onde possível */
 .main-table .rpt-setor-header {
     background: #1e3a8a;
-    color: #fff;
+    color: #fff !important;
     font-weight: 700;
     font-size: 0.75rem;
     letter-spacing: 2px;
@@ -1025,7 +917,7 @@ html, body {
 
 .main-table .rpt-cia-header {
     background: #0f172a;
-    color: #fff;
+    color: #fff !important;
     font-weight: 800;
     font-size: 0.8rem;
     letter-spacing: 3px;
@@ -1170,8 +1062,8 @@ html, body {
 .pvw-table thead th { padding: 6px 8px; color: #fff; font-family: 'Barlow Condensed', sans-serif; font-size: 0.6rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; border: 1px solid #1e3a8a; }
 .pvw-table tbody td { padding: 5px 7px; border: 1px solid #e2e8f0; color: #1e293b; vertical-align: middle; }
 
-.pvw-cia-row td { color: #fff; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 0.67rem; letter-spacing: 2px; text-transform: uppercase; border: none; }
-.pvw-setor-row td { background: #1e3a8a; color: #fff; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 0.6rem; letter-spacing: 1.5px; text-transform: uppercase; padding-left: 20px; border: none; }
+.pvw-cia-row td { color: #fff !important; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 0.67rem; letter-spacing: 2px; text-transform: uppercase; border: none !important; }
+.pvw-setor-row td { background: #1e3a8a; color: #fff !important; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 0.6rem; letter-spacing: 1.5px; text-transform: uppercase; padding-left: 20px; border: none !important; }
 
 .pvw-z { background: #f8fafc; }
 .pvw-id  { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; color: #1d4ed8; }
@@ -1260,4 +1152,8 @@ html, body {
     .badge-otimo, .rpt-badge-otimo { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .badge-bom,   .rpt-badge-bom   { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .badge-manut, .rpt-badge-manut { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+    /* Garantir que texto em headers escuros seja branco */
+    .main-table .rpt-cia-header,
+    .main-table .rpt-setor-header { color: #fff !important; }
 }

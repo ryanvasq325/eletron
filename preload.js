@@ -12,6 +12,12 @@ contextBridge.exposeInMainWorld('api', {
     // NOVO: carrega foto de um registro individualmente (lazy load)
     buscarFoto: (dados) => ipcRenderer.invoke('buscar-foto', dados),
 
+    // NOVO: upload de foto para Supabase Storage
+    carregarFotoStorage: (dados) => ipcRenderer.invoke('carregar-foto-storage', dados),
+
+    // NOVO: delete de foto do Supabase Storage
+    deletarFotoStorage: (dados) => ipcRenderer.invoke('deletar-foto-storage', dados),
+
     getComputadoresPorSetor: (setor) => ipcRenderer.invoke('buscar-por-setor', setor),
 
     getComputadoresPorCidade: (prefixo) => ipcRenderer.invoke('buscar-por-cidade', prefixo)

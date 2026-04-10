@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Inventário e Controle de Equipamentos de TI — 4º Batalhão de Polícia Militar, Cacoal/RO">
-    <!-- favicon: descomente quando tiver o arquivo -->
-    <!-- <link rel="icon" href="assets/favicon.ico"> -->
+
     <title>NTI — Controle de TI · 4º BPM</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
@@ -169,7 +168,6 @@
         <div class="table-card-header no-print">
             <span class="session-title" id="titulo-sessao">Visão Geral</span>
             <div class="spacer"></div>
-            <!-- MELHORIA: onkeyup removido — debounce configurado no script.js -->
             <input type="text" class="search-input" id="inputBusca"
                    placeholder="🔍 Buscar usuário, ID, IP..."
                    aria-label="Buscar por usuário, identificação, IP ou observações">
@@ -293,6 +291,9 @@
                             <div class="foto-info-nome" id="foto-info-nome" aria-live="polite"></div>
                         </div>
                         <input type="hidden" id="foto_base64">
+                        <input type="hidden" id="foto_url">
+                        <input type="hidden" id="foto_filename">
+                        <input type="hidden" id="foto_url_antiga">
                     </div>
 
                     <div class="modal-footer px-0 pb-0">
@@ -306,7 +307,6 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<!-- html2pdf removido daqui — agora é carregado de forma lazy em salvarPDF() no script.js -->
 <script src="script.js"></script>
 </body>
 </html>
