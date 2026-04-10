@@ -1,7 +1,7 @@
 {
-  "name": "eletron",
-  "version": "1.0.1",
-  "description": "testando",
+  "name": "inventario-ti-4bpm",
+  "version": "1.0.3",
+  "description": "Inventário e Controle de Equipamentos de TI — 4º BPM Cacoal/RO",
   "homepage": "https://github.com/ryanvasq325/eletron#readme",
   "bugs": {
     "url": "https://github.com/ryanvasq325/eletron/issues"
@@ -15,59 +15,65 @@
   "type": "commonjs",
   "main": "main.js",
   "scripts": {
-    "start": "electron-forge start",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "package": "electron-forge package",
-    "make": "electron-forge make",
-    "build": "electron-builder"
+    "start": "electron .",
+    "build": "electron-builder",
+    "publish": "electron-builder --publish always"
   },
   "build": {
-    "appId": "com.ryan.eletron",
-    "productName": "Inventario TI",
+    "appId": "com.nti.inventario4bpm",
+    "productName": "Inventario TI 4BPM",
     "publish": {
       "provider": "github",
       "owner": "ryanvasq325",
-      "repo": "eletron"
+      "repo": "eletron",
+      "releaseType": "release"
     },
     "directories": {
       "output": "dist"
     },
     "win": {
       "target": [
-        "nsis",
-        "portable"
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
       "icon": "build/icon.ico"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "shortcutName": "Inventario TI"
+      "shortcutName": "Inventario TI 4BPM",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true
     },
     "files": [
       "**/*",
-      "!dist/*",
-      "!node_modules/@electron-forge/*"
-    ]
+      "!dist/**",
+      "!.git/**",
+      "!*.md",
+      "!node_modules/@electron-forge/**"
+    ],
+    "extraResources": [],
+    "asar": true
   },
   "devDependencies": {
-    "@electron-forge/cli": "^7.11.1",
-    "@electron-forge/maker-deb": "^7.11.1",
-    "@electron-forge/maker-rpm": "^7.11.1",
-    "@electron-forge/maker-squirrel": "^7.11.1",
-    "@electron-forge/maker-zip": "^7.11.1",
-    "@electron-forge/plugin-auto-unpack-natives": "^7.11.1",
-    "@electron-forge/plugin-fuses": "^7.11.1",
-    "@electron/fuses": "^1.8.0",
-    "electron": "^40.8.0",
+    "electron": "^33.0.0",
     "electron-builder": "^26.8.1"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.99.0",
     "electron-log": "^5.4.3",
-    "electron-squirrel-startup": "^1.0.1",
-    "electron-updater": "^6.8.3",
-    "pg": "^8.20.0",
-    "postgres": "^3.4.8"
+    "electron-updater": "^6.8.3"
   }
 }
