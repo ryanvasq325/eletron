@@ -1,6 +1,11 @@
 let listaAtualComputadores = [];
 let setorAtivoParaDica = 'NTI';
 
+// ── Estado da galeria de fotos no modal ──────────────────────
+// Cada item: { tipo: 'existente'|'nova', foto_id, url, base64, nomeArquivo, marcadaParaRemover }
+let fotosModal = [];
+const MAX_FOTOS = 5;
+
 const configuracaoSetores = {
     'P-1': { id: 'P1-' }, 'P-2': { id: 'P2-' },
     'P-3': { id: 'P3-' }, 'P-4': { id: 'P4-' },
@@ -33,6 +38,14 @@ function esc(str) {
         .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
+// ── HELPERS DE TABELA ────────────────────────────
+function getTabelaPorIdentificacao(identificacao) {
+    const up = (identificacao || '').toUpperCase();
+    if (up.startsWith('1CIA')) return '1cia';
+    if (up.startsWith('2CIA')) return '2cia';
+    return 'pcs';
+}
+
 // ── RELÓGIO ──────────────────────────────────────
 function updateClock() {
     const now = new Date();
@@ -51,58 +64,201 @@ window.onload = async () => {
     configurarBusca();
 };
 
-// ── FOTO: UPLOAD E PREVIEW ───────────────────────
-function carregarFoto(input) {
-    const file = input.files[0];
-    if (!file) return;
-    processarArquivoFoto(file);
+// ══════════════════════════════════════════════════════════════
+// GALERIA DE FOTOS — lógica completa
+// ══════════════════════════════════════════════════════════════
+
+/**
+ * Adiciona fotos selecionadas pelo <input type="file"> ao estado fotosModal.
+ * Chamado pelo input do modal (HTML: onchange="adicionarFotos(this)")
+ */
+function adicionarFotos(input) {
+    const arquivos = Array.from(input.files);
+    const ativas   = fotosModal.filter(f => !f.marcadaParaRemover).length;
+    const vagas    = MAX_FOTOS - ativas;
+
+    if (vagas <= 0) {
+        toast(`Limite de ${MAX_FOTOS} fotos atingido.`, 'info');
+        input.value = '';
+        return;
+    }
+
+    arquivos.slice(0, vagas).forEach(file => {
+        if (!file.type.startsWith('image/')) { toast('Arquivo inválido: ' + file.name, 'erro'); return; }
+        if (file.size > 5 * 1024 * 1024)    { toast('Imagem muito grande (máx. 5 MB): ' + file.name, 'erro'); return; }
+
+        const reader = new FileReader();
+        reader.onload = e => {
+            fotosModal.push({
+                tipo: 'nova',
+                foto_id: null,
+                url: null,
+                base64: e.target.result,
+                nomeArquivo: file.name,
+                marcadaParaRemover: false
+            });
+            renderizarGaleria();
+        };
+        reader.readAsDataURL(file);
+    });
+
+    input.value = '';
 }
 
-function handleFotoDrop(event) {
-    event.preventDefault();
-    document.getElementById('foto-upload-area').style.borderColor = '#93c5fd';
-    const file = event.dataTransfer.files[0];
-    if (!file || !file.type.startsWith('image/')) { toast('Arquivo inválido. Selecione uma imagem.', 'erro'); return; }
-    processarArquivoFoto(file);
+/**
+ * Marca uma foto para remoção (não deleta imediatamente — só ao salvar).
+ */
+function marcarFotoParaRemover(idx) {
+    if (!fotosModal[idx]) return;
+    fotosModal[idx].marcadaParaRemover = true;
+    renderizarGaleria();
 }
 
-function processarArquivoFoto(file) {
-    if (file.size > 5 * 1024 * 1024) { toast('Imagem muito grande. Máximo permitido: 5 MB.', 'erro'); return; }
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const base64 = e.target.result;
-        document.getElementById('foto_base64').value  = base64;
-        document.getElementById('foto-preview-img').src = base64;
-        document.getElementById('foto-preview-container').style.display = 'block';
-        document.getElementById('foto-upload-area').style.display = 'none';
-        document.getElementById('foto-info-nome').innerText = '📎 ' + file.name + ' · ' + (file.size/1024).toFixed(0) + ' KB';
-        document.getElementById('foto-filename').value = file.name;
-    };
-    reader.readAsDataURL(file);
+/**
+ * Renderiza o grid de fotos dentro do modal.
+ */
+function renderizarGaleria() {
+    const container = document.getElementById('fotos-galeria-grid');
+    const contador  = document.getElementById('fotos-contador');
+    const btnAdd    = document.getElementById('btn-adicionar-foto');
+    if (!container) return;
+
+    const ativas = fotosModal.filter(f => !f.marcadaParaRemover);
+    if (contador) contador.innerText = `${ativas.length} / ${MAX_FOTOS} foto(s)`;
+    if (btnAdd)   btnAdd.style.display = ativas.length >= MAX_FOTOS ? 'none' : 'flex';
+
+    container.innerHTML = '';
+
+    fotosModal.forEach((foto, idx) => {
+        if (foto.marcadaParaRemover) return;
+        const src   = foto.url || foto.base64 || '';
+        const isCapa = fotosModal.filter(f => !f.marcadaParaRemover).indexOf(foto) === 0;
+        const div   = document.createElement('div');
+        div.className = 'foto-thumb-wrap';
+        div.innerHTML = `
+            <img
+                src="${src}"
+                class="foto-thumb"
+                title="Clique para ampliar"
+                onclick="abrirLightbox('${src.replace(/'/g, "\\'")}' )"
+                onerror="this.outerHTML='<div class=\\'foto-thumb-erro\\'>⚠️</div>'">
+            <button
+                class="foto-remove-btn"
+                onclick="marcarFotoParaRemover(${idx})"
+                title="Remover foto"
+                type="button">✕</button>
+            ${isCapa ? '<span class="foto-capa-badge">Capa</span>' : ''}`;
+        container.appendChild(div);
+    });
 }
 
-function removerFoto() {
-    document.getElementById('foto_base64').value = '';
-    document.getElementById('foto_url_atual').value = '';
-    document.getElementById('foto-preview-img').src = '';
-    document.getElementById('foto-preview-container').style.display = 'none';
-    document.getElementById('foto-upload-area').style.display = 'flex';
-    document.getElementById('foto-input').value = '';
-    document.getElementById('foto-info-nome').innerText = '';
+/**
+ * Carrega as fotos de um registro existente para o modal (edição).
+ * Busca a foto principal (foto_url da tabela) + fotos extras (inventario_fotos).
+ */
+async function carregarFotosModal(item) {
+    fotosModal = [];
+
+    // 1. Foto de capa (coluna foto_url na tabela principal)
+    const capaSrc = item.foto_url || null;
+    if (capaSrc) {
+        fotosModal.push({
+            tipo: 'existente',
+            foto_id: null,       // é a foto_url da tabela principal, não tem id em inventario_fotos
+            url: capaSrc,
+            base64: null,
+            nomeArquivo: null,
+            marcadaParaRemover: false,
+            eCapa: true          // flag para identificar no save
+        });
+    }
+
+    // 2. Fotos extras (tabela inventario_fotos)
+    try {
+        const chaveTabela = getTabelaPorIdentificacao(item.identificacao);
+        const res = await window.api.buscarFotosRegistro({ tabela: chaveTabela, registro_id: item.id });
+        (res.fotos || []).forEach(f => {
+            fotosModal.push({
+                tipo: 'existente',
+                foto_id: f.id,
+                url: f.foto_url,
+                base64: null,
+                nomeArquivo: null,
+                marcadaParaRemover: false,
+                eCapa: false
+            });
+        });
+    } catch (e) {
+        console.warn('Erro ao buscar fotos extras:', e);
+    }
+
+    renderizarGaleria();
 }
 
-// CORRIGIDO: carrega foto_url (Storage) OU base64 legado
-function carregarFotoExistente(url, base64) {
-    const src = url || base64;
-    if (!src || src === 'null' || src === '') { removerFoto(); return; }
-    if (url) document.getElementById('foto_url_atual').value = url;
-    document.getElementById('foto-preview-img').src = src;
-    document.getElementById('foto-preview-container').style.display = 'block';
-    document.getElementById('foto-upload-area').style.display = 'none';
-    document.getElementById('foto-info-nome').innerText = url ? '📎 Foto salva no Storage' : '📎 Imagem salva no registro';
+/**
+ * Processa uploads e remoções ao salvar o formulário.
+ * Retorna a URL da foto de capa (primeira foto ativa).
+ */
+async function processarFotosAoSalvar(computador_id, identificacao, fotoUrlAntiga) {
+    const chaveTabela = getTabelaPorIdentificacao(identificacao);
+
+    // ── Remover fotos marcadas ────────────────────────────────
+    for (const foto of fotosModal) {
+        if (!foto.marcadaParaRemover) continue;
+
+        if (foto.eCapa) {
+            // A foto capa será sobrescrita/removida pelo salvar-computador
+            // Não precisamos deletar manualmente aqui — main.js já trata isso
+            continue;
+        }
+
+        if (foto.foto_id) {
+            // Foto extra: deleta do Storage + inventario_fotos
+            await window.api.deletarFotoRegistro({ foto_id: foto.foto_id, foto_url: foto.url });
+        }
+    }
+
+    // ── Upload das fotos novas ────────────────────────────────
+    let ordemExtra = 0;
+    for (let i = 0; i < fotosModal.length; i++) {
+        const foto = fotosModal[i];
+        if (foto.tipo !== 'nova' || foto.marcadaParaRemover) continue;
+
+        const uploadRes = await window.api.carregarFotoStorage({
+            base64: foto.base64,
+            nomeOriginal: foto.nomeArquivo,
+            identificacao
+        });
+
+        if (!uploadRes.success) {
+            toast('Erro ao enviar foto: ' + (uploadRes.error || 'desconhecido'), 'erro');
+            continue;
+        }
+
+        foto.url  = uploadRes.url;
+        foto.tipo = 'existente';
+
+        // A 1ª foto nova que ocupa a posição de capa NÃO vai para inventario_fotos
+        // (será salva como foto_url na tabela principal via salvar-computador)
+        const isCapaNova = fotosModal.filter(f => !f.marcadaParaRemover)[0] === foto;
+        if (!isCapaNova && computador_id) {
+            await window.api.inserirFotoRegistro({
+                tabela: chaveTabela,
+                registro_id: computador_id,
+                foto_url: uploadRes.url,
+                ordem: ordemExtra++
+            });
+        }
+    }
+
+    // ── Retorna URL da foto de capa (primeira ativa) ──────────
+    const primeiraAtiva = fotosModal.find(f => !f.marcadaParaRemover);
+    return primeiraAtiva?.url || null;
 }
 
-// ── LIGHTBOX ─────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+// LIGHTBOX
+// ══════════════════════════════════════════════════════════════
 function abrirLightbox(src) {
     if (!src) return;
     document.getElementById('lightbox-img').src = src;
@@ -168,7 +324,6 @@ async function filtrarManutencao(btn) {
     marcarAtivo(btn);
     document.getElementById('titulo-sessao').innerText = "Equipamentos em Manutenção";
     try {
-        // CORRIGIDO: passa string que o main.js reconhece como filtro de manutenção
         const [r1, r2, r3] = await Promise.all([
             window.api.getComputadoresPorSetor('manutencao'),
             window.api.getComputadoresPorSetor('1ciamanutencao'),
@@ -201,7 +356,6 @@ function getRowClass(id) {
     return 'row-other';
 }
 
-// ── NORMALIZAR BASE64 (compatibilidade legado) ────
 function normalizarBase64(raw) {
     if (!raw) return null;
     let b = String(raw).trim();
@@ -216,9 +370,8 @@ function normalizarBase64(raw) {
     return b;
 }
 
-// CORRIGIDO: prioriza foto_url (Storage), cai para base64 legado
 function obterFotoSrc(item) {
-    if (item.foto_url)   return item.foto_url;
+    if (item.foto_url) return item.foto_url;
     return normalizarBase64(item.foto_base64);
 }
 
@@ -239,6 +392,7 @@ function desenharLinhas(dados) {
         const rowClass   = getRowClass(item.identificacao);
         const fotoSrc    = obterFotoSrc(item);
 
+        // Thumb da tabela: mostra apenas a foto de capa (foto_url)
         let thumbHTML = `<span class="thumb-none" title="Sem foto" aria-label="Sem foto">📷</span>`;
         if (fotoSrc) {
             thumbHTML = `<img
@@ -318,7 +472,7 @@ function abrirModal() {
     bootstrap.Modal.getOrCreateInstance(document.getElementById('modalCadastro')).show();
 }
 
-// CORRIGIDO: usa foto_url do Storage em vez de buscar base64
+// ── PREPARAR EDIÇÃO ──────────────────────────────
 async function prepararEdicao(id) {
     const item = listaAtualComputadores.find(c => c.id == id);
     if (!item) { toast('Registro não encontrado.', 'erro'); return; }
@@ -332,34 +486,21 @@ async function prepararEdicao(id) {
     document.getElementById('observacoes').value     = item.observacoes || '';
     document.getElementById('foto_url_antiga').value = item.foto_url    || '';
 
-    removerFoto();
     document.getElementById('modalTitle').innerText    = 'Editar Registro';
     document.getElementById('btnSalvar').className     = 'btn-modal-save edit-mode';
     document.getElementById('btnSalvar').innerText     = 'Atualizar Registro';
+
+    // Carrega galeria de fotos (capa + extras)
+    await carregarFotosModal(item);
+
     abrirModal();
-
-    // Se já tem foto_url em memória, exibe direto sem nova requisição
-    if (item.foto_url) {
-        carregarFotoExistente(item.foto_url, null);
-        return;
-    }
-
-    // Fallback: tenta buscar foto (compatibilidade com registros antigos em base64)
-    try {
-        const res = await window.api.buscarFoto({ id: item.id, identificacao: item.identificacao });
-        if (res?.foto_url) {
-            item.foto_url = res.foto_url;
-            carregarFotoExistente(res.foto_url, null);
-        }
-    } catch (e) {
-        console.warn('Não foi possível carregar a foto:', e);
-    }
 }
 
 function abrirModalCadastro() {
     document.getElementById('formCadastro').reset();
     document.getElementById('edit-id').value = '';
-    removerFoto();
+    fotosModal = [];
+    renderizarGaleria();
     document.getElementById('modalTitle').innerText  = 'Novo Registro';
     document.getElementById('btnSalvar').className   = 'btn-modal-save';
     document.getElementById('btnSalvar').innerText   = 'Salvar no Banco';
@@ -368,64 +509,86 @@ function abrirModalCadastro() {
     abrirModal();
 }
 
+// ── SUBMIT ───────────────────────────────────────
 document.getElementById('formCadastro').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const isEdicao       = !!document.getElementById('edit-id').value;
-    const fotoBase64     = document.getElementById('foto_base64').value    || null;
-    const fotoUrlAtual   = document.getElementById('foto_url_atual').value || null;  // URL já no Storage
-    const fotoUrlAntiga  = document.getElementById('foto_url_antiga').value|| null;
-    const nomeArquivo    = document.getElementById('foto-filename').value  || 'foto.jpg';
-    const identificacao  = document.getElementById('identificacao').value;
 
-    let fotoUrl = fotoUrlAtual; // mantém a URL existente por padrão
+    const editId        = document.getElementById('edit-id').value || null;
+    const isEdicao      = !!editId;
+    const identificacao = document.getElementById('identificacao').value;
+    const fotoUrlAntiga = document.getElementById('foto_url_antiga').value || null;
 
-    // Se há uma NOVA foto (base64) selecionada, faz upload para o Storage
-    if (fotoBase64 && fotoBase64.length > 100) {
-        try {
-            const uploadRes = await window.api.carregarFotoStorage({
-                base64: fotoBase64,
-                nomeOriginal: nomeArquivo,
-                identificacao: identificacao
-            });
-            if (uploadRes.success) {
-                fotoUrl = uploadRes.url;
-            } else {
-                toast('Erro ao fazer upload da foto: ' + uploadRes.error, 'erro');
-                return;
-            }
-        } catch (err) {
-            toast('Erro ao fazer upload: ' + err.message, 'erro');
-            return;
-        }
-    }
+    // Processa upload/remoção de fotos e obtém URL da capa
+    // Para registros NOVOS, computador_id ainda não existe — passamos null
+    // As fotos extras serão inseridas após o upsert retornar o id
+    const novaCapaUrl = await processarFotosAoSalvar(
+        isEdicao ? Number(editId) : null,
+        identificacao,
+        fotoUrlAntiga
+    );
 
     const dados = {
-        id:            document.getElementById('edit-id').value  || null,
+        id:              editId ? Number(editId) : null,
         identificacao,
-        usuario:       document.getElementById('usuario').value,
-        monitor_info:  document.getElementById('monitor_info').value,
-        ip_maquina:    document.getElementById('ip_maquina').value,
-        situacao:      document.getElementById('situacao').value,
-        observacoes:   document.getElementById('observacoes').value,
-        foto_url:      fotoUrl,
-        foto_url_antiga: fotoUrlAntiga // main.js usa para deletar a antiga do Storage
+        usuario:         document.getElementById('usuario').value,
+        monitor_info:    document.getElementById('monitor_info').value,
+        ip_maquina:      document.getElementById('ip_maquina').value,
+        situacao:        document.getElementById('situacao').value,
+        observacoes:     document.getElementById('observacoes').value,
+        foto_url:        novaCapaUrl,
+        foto_url_antiga: fotoUrlAntiga
     };
 
     const res = await window.api.salvarComputador(dados);
+
     if (res.success) {
+        // Para registros NOVOS: precisamos inserir as fotos extras na tabela inventario_fotos
+        // Buscamos o id recém-criado pelo identificacao (abordagem simples)
+        if (!isEdicao) {
+            try {
+                const todosRegistros = await window.api.getComputadores();
+                const novoItem = todosRegistros
+                    .filter(c => c.identificacao === identificacao)
+                    .sort((a, b) => b.id - a.id)[0];
+
+                if (novoItem) {
+                    const chaveTabela = getTabelaPorIdentificacao(identificacao);
+                    let ordem = 0;
+                    // Pula a capa (índice 0 ativo), insere o restante como extras
+                    const ativas = fotosModal.filter(f => !f.marcadaParaRemover);
+                    for (let i = 1; i < ativas.length; i++) {
+                        const foto = ativas[i];
+                        if (foto.url) {
+                            await window.api.inserirFotoRegistro({
+                                tabela: chaveTabela,
+                                registro_id: novoItem.id,
+                                foto_url: foto.url,
+                                ordem: ordem++
+                            });
+                        }
+                    }
+                }
+            } catch (err) {
+                console.warn('Erro ao associar fotos extras ao novo registro:', err);
+            }
+        }
+
         fecharModalLimpo();
         toast(isEdicao ? 'Registro atualizado!' : 'Registro salvo!', 'sucesso');
-        // Atualiza item em memória para refletir a nova foto imediatamente
-        if (fotoUrl && dados.id) {
-            const item = listaAtualComputadores.find(c => c.id == dados.id);
-            if (item) item.foto_url = fotoUrl;
+
+        // Atualiza cache em memória
+        if (novaCapaUrl && editId) {
+            const item = listaAtualComputadores.find(c => c.id == editId);
+            if (item) item.foto_url = novaCapaUrl;
         }
+
         await atualizarVisualizacao();
     } else {
         toast('Erro ao salvar: ' + res.error, 'erro');
     }
 });
 
+// ── EXCLUIR ──────────────────────────────────────
 async function excluir(id) {
     const item = listaAtualComputadores.find(c => c.id == id);
     if (!item) return;
@@ -516,7 +679,6 @@ function agruparPorCidadeCiaSetor() {
     return { mapa, totais };
 }
 
-// ── MAPA de fotos: id → src ───────────────────────
 function construirFotoMap(linhas) {
     const fotoMap = {};
     linhas.forEach(linha => {
@@ -731,7 +893,6 @@ function prepararConteudoRelatorio() {
     return { novoConteudo, htmlOriginal };
 }
 
-// Troca o <thead> durante impressão para incluir coluna Foto
 function trocarCabecalhoParaImpressao() {
     const thead = document.querySelector('#tabela-principal thead tr');
     if (!thead) return null;

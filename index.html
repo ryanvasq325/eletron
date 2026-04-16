@@ -1,314 +1,471 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Inventário e Controle de Equipamentos de TI — 4º Batalhão de Polícia Militar, Cacoal/RO">
+    <meta name="description"
+        content="Inventário e Controle de Equipamentos de TI — 4º Batalhão de Polícia Militar, Cacoal/RO">
 
     <title>NTI — Controle de TI · 4º BPM</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+
+    <style>
+        /* ── Galeria de fotos no modal ─────────────────────────── */
+
+        .fotos-galeria-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            min-height: 0;
+        }
+
+        .foto-thumb-wrap {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            flex-shrink: 0;
+        }
+
+        .foto-thumb {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 7px;
+            border: 2px solid #334155;
+            cursor: pointer;
+            transition: border-color 0.15s;
+        }
+        .foto-thumb:hover {
+            border-color: #3b82f6;
+        }
+
+        .foto-thumb-erro {
+            width: 100%;
+            height: 100%;
+            border-radius: 7px;
+            background: #1e293b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            border: 2px solid #ef4444;
+        }
+
+        .foto-remove-btn {
+            position: absolute;
+            top: -7px;
+            right: -7px;
+            background: #ef4444;
+            color: #fff;
+            border: 2px solid #0f172a;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            line-height: 18px;
+            text-align: center;
+            padding: 0;
+            transition: background 0.15s;
+            z-index: 2;
+        }
+        .foto-remove-btn:hover {
+            background: #b91c1c;
+        }
+
+        .foto-capa-badge {
+            position: absolute;
+            bottom: 3px;
+            left: 3px;
+            background: #1d4ed8;
+            color: #fff;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 1px 5px;
+            border-radius: 3px;
+            pointer-events: none;
+            letter-spacing: 0.5px;
+        }
+
+        .foto-add-btn {
+            width: 80px;
+            height: 80px;
+            border: 2px dashed #475569;
+            border-radius: 7px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #94a3b8;
+            gap: 2px;
+            transition: border-color 0.15s, color 0.15s;
+            user-select: none;
+        }
+        .foto-add-btn:hover {
+            border-color: #3b82f6;
+            color: #60a5fa;
+        }
+    </style>
 </head>
+
 <body>
 
-<!-- PDF Loading -->
-<div id="pdf-loading" role="status" aria-live="polite">
-    <div class="spinner-border text-light" style="width:2.5rem;height:2.5rem;" aria-hidden="true"></div>
-    <p>Gerando PDF, aguarde...</p>
-</div>
-
-<!-- Toast -->
-<div id="toast-container" role="status" aria-live="polite" aria-atomic="true"></div>
-
-<!-- Confirm Dialog -->
-<div id="confirm-overlay" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
-    <div id="confirm-box">
-        <div class="confirm-icon" aria-hidden="true">🗑️</div>
-        <div class="confirm-title" id="confirm-title">Excluir Registro</div>
-        <div class="confirm-msg">Esta ação é permanente e não pode ser desfeita.</div>
-        <div class="confirm-btns">
-            <button class="btn-confirm-cancel" id="confirm-cancel">Cancelar</button>
-            <button class="btn-confirm-ok" id="confirm-ok">Excluir</button>
-        </div>
+    <!-- PDF Loading -->
+    <div id="pdf-loading" role="status" aria-live="polite">
+        <div class="spinner-border text-light" style="width:2.5rem;height:2.5rem;" aria-hidden="true"></div>
+        <p>Gerando PDF, aguarde...</p>
     </div>
-</div>
 
-<!-- Lightbox -->
-<div id="lightbox-overlay" onclick="fecharLightbox()" role="dialog" aria-modal="true" aria-label="Visualizar foto do equipamento">
-    <button class="lb-close" onclick="fecharLightbox()" aria-label="Fechar visualização">✕ Fechar</button>
-    <img id="lightbox-img" src="" alt="Foto do equipamento ampliada">
-</div>
+    <!-- Toast -->
+    <div id="toast-container" role="status" aria-live="polite" aria-atomic="true"></div>
 
-<!-- Preview Modal -->
-<div id="preview-overlay" role="dialog" aria-modal="true" aria-labelledby="pvw-title-label">
-    <div id="preview-box">
-        <div id="preview-topbar">
-            <div>
-                <div class="pvw-title" id="pvw-title-label">🖨 Pré-visualização do Relatório</div>
-                <div class="pvw-sub" id="pvw-sub">—</div>
-            </div>
-            <button class="btn-pvw btn-pvw-print" onclick="executarImprimir()" aria-label="Imprimir relatório agora">🖨 Imprimir agora</button>
-            <button class="btn-pvw btn-pvw-pdf"   onclick="executarPDF()"     aria-label="Gerar PDF do relatório">📄 Gerar PDF</button>
-            <button class="btn-pvw btn-pvw-close" onclick="fecharPreview()"   aria-label="Fechar pré-visualização">✕ Fechar</button>
-        </div>
-        <div id="preview-stats" aria-label="Resumo de situações">
-            <div class="pvw-stat"><div class="pvw-dot" style="background:#22c55e;" aria-hidden="true"></div>Ótimo:<span class="pvw-val" id="pvw-n-otimo">0</span></div>
-            <div class="pvw-stat"><div class="pvw-dot" style="background:#f59e0b;" aria-hidden="true"></div>Bom:<span class="pvw-val" id="pvw-n-bom">0</span></div>
-            <div class="pvw-stat"><div class="pvw-dot" style="background:#ef4444;" aria-hidden="true"></div>Manutenção:<span class="pvw-val" id="pvw-n-manut">0</span></div>
-            <div class="pvw-stat" style="margin-left:auto;border-right:none;">Total:<span class="pvw-val" id="pvw-n-total">0</span>equipamento(s)</div>
-        </div>
-        <div id="preview-paper-wrap">
-            <div class="pvw-page" id="pvw-page" aria-label="Prévia do relatório impresso"></div>
-        </div>
-    </div>
-</div>
-
-<!-- HEADER -->
-<header class="app-header no-print">
-    <div class="logo-badge" aria-hidden="true">NTI</div>
-    <div class="header-text">
-        <h1>Controle de TI · 4º BPM</h1>
-        <small>Batalhão de Polícia Militar — Cacoal / RO</small>
-    </div>
-    <div class="header-meta" aria-live="polite">
-        <strong id="clock" aria-label="Horário atual">--:--:--</strong><br>
-        <span id="date-display"></span>
-    </div>
-</header>
-
-<div class="app-body">
-
-    <!-- Report Header (print only) -->
-    <div class="relatorio-header" id="relatorio-header" aria-hidden="true">
-        <div class="rh-topo">
-            <div class="rh-brasao">NTI</div>
-            <div class="rh-texto">
-                <p class="rh-gov">Governo do Estado de Rondônia</p>
-                <p class="rh-org">Polícia Militar do Estado de Rondônia</p>
-                <p class="rh-uni">4º Batalhão de Polícia Militar — Cacoal / RO</p>
-                <span class="rh-doc">Inventário e Controle de Equipamentos de TI</span>
-            </div>
-            <div class="rh-meta">
-                <strong id="rh-filtro-texto">Visão Geral</strong>
-                <span class="rh-gerado">Gerado em:</span>
-                <span class="rh-data" id="data-relatorio-texto"></span>
+    <!-- Confirm Dialog -->
+    <div id="confirm-overlay" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+        <div id="confirm-box">
+            <div class="confirm-icon" aria-hidden="true">🗑️</div>
+            <div class="confirm-title" id="confirm-title">Excluir Registro</div>
+            <div class="confirm-msg">Esta ação é permanente e não pode ser desfeita.</div>
+            <div class="confirm-btns">
+                <button class="btn-confirm-cancel" id="confirm-cancel">Cancelar</button>
+                <button class="btn-confirm-ok" id="confirm-ok">Excluir</button>
             </div>
         </div>
     </div>
 
-    <!-- CONTROL PANEL -->
-    <nav class="control-panel no-print" aria-label="Filtrar por setor ou cidade">
-        <div class="panel-title-bar">
-            <div class="dot" style="background:#ef4444;" aria-hidden="true"></div>
-            <div class="dot" style="background:#f59e0b;" aria-hidden="true"></div>
-            <div class="dot" style="background:#22c55e;" aria-hidden="true"></div>
-            <span style="margin-left:6px;">Painel de Setores — 4º BPM</span>
-        </div>
-        <div class="sector-layer" aria-label="Setores da PCS">
-            <span class="layer-label pcs">PCS</span>
-            <div class="layer-divider" aria-hidden="true"></div>
-            <div class="layer-btns">
-                <button class="btn-sector pcs" onclick="filtrarPorSetor('P-1', this)" aria-label="Filtrar setor P-1">P-1</button>
-                <button class="btn-sector pcs" onclick="filtrarPorSetor('P-2', this)" aria-label="Filtrar setor P-2">P-2</button>
-                <button class="btn-sector pcs" onclick="filtrarPorSetor('P-3', this)" aria-label="Filtrar setor P-3">P-3</button>
-                <button class="btn-sector pcs" onclick="filtrarPorSetor('P-4', this)" aria-label="Filtrar setor P-4">P-4</button>
-                <button class="btn-sector pcs" onclick="filtrarPorSetor('P-5', this)" aria-label="Filtrar setor P-5">P-5</button>
-                <button class="btn-sector pcs" onclick="filtrarPorSetor('P-6', this)" aria-label="Filtrar setor P-6">P-6</button>
-                <button class="btn-sector pcs" onclick="filtrarPorSetor('NTI', this)" aria-label="Filtrar setor NTI">NTI</button>
-                <button class="btn-sector pcs-subcmd" onclick="filtrarPorSetor('SUB CMD', this)" aria-label="Filtrar Sub Comando">Sub Cmd</button>
-                <button class="btn-sector pcs-cmd"    onclick="filtrarPorSetor('CMD', this)"     aria-label="Filtrar Comando">Cmd</button>
-            </div>
-        </div>
-        <div class="sector-layer" aria-label="Setores da 1ª CIA">
-            <span class="layer-label cmd">1ª Cia</span>
-            <div class="layer-divider" aria-hidden="true"></div>
-            <div class="layer-btns">
-                <button class="btn-sector cmd" onclick="filtrarPorSetor('1CIA-P1', this)">P-1</button>
-                <button class="btn-sector cmd" onclick="filtrarPorSetor('1CIA-P2', this)">P-2</button>
-                <button class="btn-sector cmd" onclick="filtrarPorSetor('1CIA-P3', this)">P-3</button>
-                <button class="btn-sector cmd" onclick="filtrarPorSetor('1CIA-P4', this)">P-4</button>
-                <button class="btn-sector cmd" onclick="filtrarPorSetor('1CIA-P5', this)">P-5</button>
-                <button class="btn-sector cmd" onclick="filtrarPorSetor('1CIA-P6', this)">P-6</button>
-                <button class="btn-sector cmd" onclick="filtrarPorSetor('1CIA-NTI', this)">NTI</button>
-            </div>
-        </div>
-        <div class="sector-layer" aria-label="Setores da 2ª CIA">
-            <span class="layer-label sub">2ª Cia</span>
-            <div class="layer-divider" aria-hidden="true"></div>
-            <div class="layer-btns">
-                <button class="btn-sector sub" onclick="filtrarPorSetor('2CIA-P1', this)">P-1</button>
-                <button class="btn-sector sub" onclick="filtrarPorSetor('2CIA-P2', this)">P-2</button>
-                <button class="btn-sector sub" onclick="filtrarPorSetor('2CIA-P3', this)">P-3</button>
-                <button class="btn-sector sub" onclick="filtrarPorSetor('2CIA-P4', this)">P-4</button>
-                <button class="btn-sector sub" onclick="filtrarPorSetor('2CIA-P5', this)">P-5</button>
-                <button class="btn-sector sub" onclick="filtrarPorSetor('2CIA-P6', this)">P-6</button>
-                <button class="btn-sector sub" onclick="filtrarPorSetor('2CIA-NTI', this)">NTI</button>
-            </div>
-        </div>
-        <div class="sector-layer" style="background:#f5f7ff;" aria-label="Filtrar por cidade">
-            <span class="layer-label city">Cidades</span>
-            <div class="layer-divider" aria-hidden="true"></div>
-            <div class="layer-btns">
-                <button class="btn-sector city" onclick="filtrarPorCidade('PB', 'Pimenta Bueno', this)">📍 Pimenta Bueno</button>
-                <button class="btn-sector city" onclick="filtrarPorCidade('ESP', 'Espigão', this)">📍 Espigão</button>
-                <button class="btn-sector city" onclick="filtrarPorCidade('AND', 'Andreazza', this)">📍 Andreazza</button>
-                <button class="btn-sector city" onclick="filtrarPorCidade('SF', 'São Felipe', this)">📍 São Felipe</button>
-                <button class="btn-sector city" onclick="filtrarPorCidade('PRIM', 'Primavera', this)">📍 Primavera</button>
-            </div>
-        </div>
-        <div class="action-row">
-            <button class="btn-action todos active" onclick="renderizarTabela(this)" aria-label="Ver todos os registros">⊞ Ver Todos</button>
-            <button class="btn-action manut" onclick="filtrarManutencao(this)" aria-label="Filtrar equipamentos em manutenção">🛠 Manutenção</button>
-        </div>
-    </nav>
+    <!-- Lightbox -->
+    <div id="lightbox-overlay" onclick="fecharLightbox()" role="dialog" aria-modal="true"
+        aria-label="Visualizar foto do equipamento">
+        <button class="lb-close" onclick="fecharLightbox()" aria-label="Fechar visualização">✕ Fechar</button>
+        <img id="lightbox-img" src="" alt="Foto do equipamento ampliada">
+    </div>
 
-    <!-- TABLE CARD -->
-    <div class="table-card">
-        <div class="table-card-header no-print">
-            <span class="session-title" id="titulo-sessao">Visão Geral</span>
-            <div class="spacer"></div>
-            <input type="text" class="search-input" id="inputBusca"
-                   placeholder="🔍 Buscar usuário, ID, IP..."
-                   aria-label="Buscar por usuário, identificação, IP ou observações">
-            <button class="btn-tool" onclick="abrirPreview()" aria-label="Pré-visualizar e imprimir relatório">🖨 Imprimir</button>
-            <button class="btn-tool danger" onclick="salvarPDF()" aria-label="Gerar e salvar PDF do relatório">📄 PDF</button>
-            <button class="btn-tool primary" id="btnNovoRegistro" onclick="abrirModalCadastro()" aria-label="Cadastrar novo equipamento">+ Novo Registro</button>
-        </div>
-
-        <div class="table-responsive">
-            <table class="main-table" id="tabela-principal" aria-label="Inventário de equipamentos de TI">
-                <thead>
-                    <tr>
-                        <th scope="col" style="width:44px">#</th>
-                        <th scope="col" style="width:52px" class="no-print">Foto</th>
-                        <th scope="col" style="width:10%">Identificação</th>
-                        <th scope="col" style="width:20%">Usuário</th>
-                        <th scope="col" style="width:16%">Monitor / Tombamento</th>
-                        <th scope="col" style="width:11%">Endereço IP</th>
-                        <th scope="col" style="width:10%">Situação</th>
-                        <th scope="col">Observações</th>
-                        <th scope="col" class="no-print" style="width:90px;text-align:center;">Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="corpo-tabela">
-                    <tr><td colspan="9"><div class="empty-state"><div class="icon" aria-hidden="true">⌛</div><p>Carregando registros...</p></div></td></tr>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Footer impressão -->
-        <div class="relatorio-footer" id="relatorio-footer" aria-hidden="true">
-            <div class="rpt-resumo-wrap" id="rpt-resumo-container"></div>
-            <div class="rpt-footer-wrap">
-                <div class="rpt-footer-left">
-                    <strong>4º Batalhão de Polícia Militar</strong>
-                    Seção de Informática — NTI<br>Cacoal / RO
+    <!-- Preview Modal -->
+    <div id="preview-overlay" role="dialog" aria-modal="true" aria-labelledby="pvw-title-label">
+        <div id="preview-box">
+            <div id="preview-topbar">
+                <div>
+                    <div class="pvw-title" id="pvw-title-label">🖨 Pré-visualização do Relatório</div>
+                    <div class="pvw-sub" id="pvw-sub">—</div>
                 </div>
-                <div class="rpt-assinaturas">
-                    <div class="rpt-assinatura"><div class="linha"></div><p>Responsável Técnico</p><small>Seção de Informática — 4º BPM</small></div>
-                    <div class="rpt-assinatura"><div class="linha"></div><p>Comandante / Chefe</p><small>Visto e Ciência</small></div>
+                <button class="btn-pvw btn-pvw-print" onclick="executarImprimir()"
+                    aria-label="Imprimir relatório agora">🖨 Imprimir agora</button>
+                <button class="btn-pvw btn-pvw-pdf" onclick="executarPDF()" aria-label="Gerar PDF do relatório">📄 Gerar
+                    PDF</button>
+                <button class="btn-pvw btn-pvw-close" onclick="fecharPreview()" aria-label="Fechar pré-visualização">✕
+                    Fechar</button>
+            </div>
+            <div id="preview-stats" aria-label="Resumo de situações">
+                <div class="pvw-stat">
+                    <div class="pvw-dot" style="background:#22c55e;" aria-hidden="true"></div>Ótimo:<span
+                        class="pvw-val" id="pvw-n-otimo">0</span>
+                </div>
+                <div class="pvw-stat">
+                    <div class="pvw-dot" style="background:#f59e0b;" aria-hidden="true"></div>Bom:<span class="pvw-val"
+                        id="pvw-n-bom">0</span>
+                </div>
+                <div class="pvw-stat">
+                    <div class="pvw-dot" style="background:#ef4444;" aria-hidden="true"></div>Manutenção:<span
+                        class="pvw-val" id="pvw-n-manut">0</span>
+                </div>
+                <div class="pvw-stat" style="margin-left:auto;border-right:none;">Total:<span class="pvw-val"
+                        id="pvw-n-total">0</span>equipamento(s)</div>
+            </div>
+            <div id="preview-paper-wrap">
+                <div class="pvw-page" id="pvw-page" aria-label="Prévia do relatório impresso"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HEADER -->
+    <header class="app-header no-print">
+        <div class="logo-badge" aria-hidden="true">NTI</div>
+        <div class="header-text">
+            <h1>Controle de TI · 4º BPM</h1>
+            <small>Batalhão de Polícia Militar — Cacoal / RO</small>
+        </div>
+        <div class="header-meta" aria-live="polite">
+            <strong id="clock" aria-label="Horário atual">--:--:--</strong><br>
+            <span id="date-display"></span>
+        </div>
+    </header>
+
+    <div class="app-body">
+
+        <!-- Report Header (print only) -->
+        <div class="relatorio-header" id="relatorio-header" aria-hidden="true">
+            <div class="rh-topo">
+                <div class="rh-brasao">NTI</div>
+                <div class="rh-texto">
+                    <p class="rh-gov">Governo do Estado de Rondônia</p>
+                    <p class="rh-org">Polícia Militar do Estado de Rondônia</p>
+                    <p class="rh-uni">4º Batalhão de Polícia Militar — Cacoal / RO</p>
+                    <span class="rh-doc">Inventário e Controle de Equipamentos de TI</span>
+                </div>
+                <div class="rh-meta">
+                    <strong id="rh-filtro-texto">Visão Geral</strong>
+                    <span class="rh-gerado">Gerado em:</span>
+                    <span class="rh-data" id="data-relatorio-texto"></span>
                 </div>
             </div>
         </div>
 
-        <div class="table-footer no-print">
-            <span id="contador-registros" class="counter-chip" aria-live="polite">Aguardando...</span>
+        <!-- CONTROL PANEL -->
+        <nav class="control-panel no-print" aria-label="Filtrar por setor ou cidade">
+            <div class="panel-title-bar">
+                <div class="dot" style="background:#ef4444;" aria-hidden="true"></div>
+                <div class="dot" style="background:#f59e0b;" aria-hidden="true"></div>
+                <div class="dot" style="background:#22c55e;" aria-hidden="true"></div>
+                <span style="margin-left:6px;">Painel de Setores — 4º BPM</span>
+            </div>
+            <div class="sector-layer" aria-label="Setores da PCS">
+                <span class="layer-label pcs">PCS</span>
+                <div class="layer-divider" aria-hidden="true"></div>
+                <div class="layer-btns">
+                    <button class="btn-sector pcs" onclick="filtrarPorSetor('P-1', this)"
+                        aria-label="Filtrar setor P-1">P-1</button>
+                    <button class="btn-sector pcs" onclick="filtrarPorSetor('P-2', this)"
+                        aria-label="Filtrar setor P-2">P-2</button>
+                    <button class="btn-sector pcs" onclick="filtrarPorSetor('P-3', this)"
+                        aria-label="Filtrar setor P-3">P-3</button>
+                    <button class="btn-sector pcs" onclick="filtrarPorSetor('P-4', this)"
+                        aria-label="Filtrar setor P-4">P-4</button>
+                    <button class="btn-sector pcs" onclick="filtrarPorSetor('P-5', this)"
+                        aria-label="Filtrar setor P-5">P-5</button>
+                    <button class="btn-sector pcs" onclick="filtrarPorSetor('P-6', this)"
+                        aria-label="Filtrar setor P-6">P-6</button>
+                    <button class="btn-sector pcs" onclick="filtrarPorSetor('NTI', this)"
+                        aria-label="Filtrar setor NTI">NTI</button>
+                    <button class="btn-sector pcs-subcmd" onclick="filtrarPorSetor('SUB CMD', this)"
+                        aria-label="Filtrar Sub Comando">Sub Cmd</button>
+                    <button class="btn-sector pcs-cmd" onclick="filtrarPorSetor('CMD', this)"
+                        aria-label="Filtrar Comando">Cmd</button>
+                </div>
+            </div>
+            <div class="sector-layer" aria-label="Setores da 1ª CIA">
+                <span class="layer-label cmd">1ª Cia</span>
+                <div class="layer-divider" aria-hidden="true"></div>
+                <div class="layer-btns">
+                    <button class="btn-sector cmd" onclick="filtrarPorSetor('1CIA-P1', this)">P-1</button>
+                    <button class="btn-sector cmd" onclick="filtrarPorSetor('1CIA-P2', this)">P-2</button>
+                    <button class="btn-sector cmd" onclick="filtrarPorSetor('1CIA-P3', this)">P-3</button>
+                    <button class="btn-sector cmd" onclick="filtrarPorSetor('1CIA-P4', this)">P-4</button>
+                    <button class="btn-sector cmd" onclick="filtrarPorSetor('1CIA-P5', this)">P-5</button>
+                    <button class="btn-sector cmd" onclick="filtrarPorSetor('1CIA-P6', this)">P-6</button>
+                    <button class="btn-sector cmd" onclick="filtrarPorSetor('1CIA-NTI', this)">NTI</button>
+                </div>
+            </div>
+            <div class="sector-layer" aria-label="Setores da 2ª CIA">
+                <span class="layer-label sub">2ª Cia</span>
+                <div class="layer-divider" aria-hidden="true"></div>
+                <div class="layer-btns">
+                    <button class="btn-sector sub" onclick="filtrarPorSetor('2CIA-P1', this)">P-1</button>
+                    <button class="btn-sector sub" onclick="filtrarPorSetor('2CIA-P2', this)">P-2</button>
+                    <button class="btn-sector sub" onclick="filtrarPorSetor('2CIA-P3', this)">P-3</button>
+                    <button class="btn-sector sub" onclick="filtrarPorSetor('2CIA-P4', this)">P-4</button>
+                    <button class="btn-sector sub" onclick="filtrarPorSetor('2CIA-P5', this)">P-5</button>
+                    <button class="btn-sector sub" onclick="filtrarPorSetor('2CIA-P6', this)">P-6</button>
+                    <button class="btn-sector sub" onclick="filtrarPorSetor('2CIA-NTI', this)">NTI</button>
+                </div>
+            </div>
+            <div class="sector-layer" style="background:#f5f7ff;" aria-label="Filtrar por cidade">
+                <span class="layer-label city">Cidades</span>
+                <div class="layer-divider" aria-hidden="true"></div>
+                <div class="layer-btns">
+                    <button class="btn-sector city" onclick="filtrarPorCidade('PB', 'Pimenta Bueno', this)">📍 Pimenta
+                        Bueno</button>
+                    <button class="btn-sector city" onclick="filtrarPorCidade('ESP', 'Espigão', this)">📍
+                        Espigão</button>
+                    <button class="btn-sector city" onclick="filtrarPorCidade('AND', 'Andreazza', this)">📍
+                        Andreazza</button>
+                    <button class="btn-sector city" onclick="filtrarPorCidade('SF', 'São Felipe', this)">📍 São
+                        Felipe</button>
+                    <button class="btn-sector city" onclick="filtrarPorCidade('PRIM', 'Primavera', this)">📍
+                        Primavera</button>
+                </div>
+            </div>
+            <div class="action-row">
+                <button class="btn-action todos active" onclick="renderizarTabela(this)"
+                    aria-label="Ver todos os registros">⊞ Ver Todos</button>
+                <button class="btn-action manut" onclick="filtrarManutencao(this)"
+                    aria-label="Filtrar equipamentos em manutenção">🛠 Manutenção</button>
+            </div>
+        </nav>
+
+        <!-- TABLE CARD -->
+        <div class="table-card">
+            <div class="table-card-header no-print">
+                <span class="session-title" id="titulo-sessao">Visão Geral</span>
+                <div class="spacer"></div>
+                <input type="text" class="search-input" id="inputBusca" placeholder="🔍 Buscar usuário, ID, IP..."
+                    aria-label="Buscar por usuário, identificação, IP ou observações">
+                <button class="btn-tool" onclick="abrirPreview()" aria-label="Pré-visualizar e imprimir relatório">🖨
+                    Imprimir</button>
+                <button class="btn-tool danger" onclick="salvarPDF()" aria-label="Gerar e salvar PDF do relatório">📄
+                    PDF</button>
+                <button class="btn-tool primary" id="btnNovoRegistro" onclick="abrirModalCadastro()"
+                    aria-label="Cadastrar novo equipamento">+ Novo Registro</button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="main-table" id="tabela-principal" aria-label="Inventário de equipamentos de TI">
+                    <thead>
+                        <tr>
+                            <th scope="col" style="width:44px">#</th>
+                            <th scope="col" style="width:52px" class="no-print">Foto</th>
+                            <th scope="col" style="width:10%">Identificação</th>
+                            <th scope="col" style="width:20%">Usuário</th>
+                            <th scope="col" style="width:16%">Monitor / Tombamento</th>
+                            <th scope="col" style="width:11%">Endereço IP</th>
+                            <th scope="col" style="width:10%">Situação</th>
+                            <th scope="col">Observações</th>
+                            <th scope="col" class="no-print" style="width:90px;text-align:center;">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpo-tabela">
+                        <tr>
+                            <td colspan="9">
+                                <div class="empty-state">
+                                    <div class="icon" aria-hidden="true">⌛</div>
+                                    <p>Carregando registros...</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Footer impressão -->
+            <div class="relatorio-footer" id="relatorio-footer" aria-hidden="true">
+                <div class="rpt-resumo-wrap" id="rpt-resumo-container"></div>
+                <div class="rpt-footer-wrap">
+                    <div class="rpt-footer-left">
+                        <strong>4º Batalhão de Polícia Militar</strong>
+                        Seção de Informática — NTI<br>Cacoal / RO
+                    </div>
+                    <div class="rpt-assinaturas">
+                        <div class="rpt-assinatura">
+                            <div class="linha"></div>
+                            <p>Responsável Técnico</p><small>Seção de Informática — 4º BPM</small>
+                        </div>
+                        <div class="rpt-assinatura">
+                            <div class="linha"></div>
+                            <p>Comandante / Chefe</p><small>Visto e Ciência</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-footer no-print">
+                <span id="contador-registros" class="counter-chip" aria-live="polite">Aguardando...</span>
+            </div>
         </div>
     </div>
-</div>
 
-<!-- MODAL CADASTRO -->
-<div class="modal fade" id="modalCadastro" tabindex="-1" aria-labelledby="modalTitle" aria-modal="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header" id="modalHeader">
-                <span class="modal-title" id="modalTitle">Novo Registro</span>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="formCadastro" class="row g-3" novalidate>
-                    <input type="hidden" id="edit-id">
-                    <div class="col-md-4">
-                        <label class="form-label" for="identificacao">Identificação</label>
-                        <input type="text" class="form-control" id="identificacao" placeholder="P1-XX" required aria-required="true">
-                    </div>
-                    <div class="col-md-8">
-                        <label class="form-label" for="usuario">Usuário / Graduação</label>
-                        <input type="text" class="form-control" id="usuario" placeholder="SGT PM FULANO" required aria-required="true"
-                               oninput="this.value = this.value.toUpperCase()">
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label" for="monitor_info">Monitor e Tombamento</label>
-                        <textarea class="form-control" id="monitor_info" rows="2"
-                                  oninput="this.value = this.value.toUpperCase()"></textarea>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label" for="ip_maquina">Endereço IP</label>
-                        <input type="text" class="form-control" id="ip_maquina" placeholder="10.15.X.X"
-                               inputmode="decimal" autocomplete="off">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label" for="situacao">Situação</label>
-                        <select class="form-select" id="situacao" aria-label="Situação do equipamento">
-                            <option value="OTIMO">ÓTIMO</option>
-                            <option value="BOM">BOM</option>
-                            <option value="MANUTENÇÃO">MANUTENÇÃO</option>
-                        </select>
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label" for="observacoes">Observações Técnicas</label>
-                        <textarea class="form-control" id="observacoes" rows="2"
-                                  oninput="this.value = this.value.toUpperCase()"></textarea>
-                    </div>
+    <!-- MODAL CADASTRO -->
+    <div class="modal fade" id="modalCadastro" tabindex="-1" aria-labelledby="modalTitle" aria-modal="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header" id="modalHeader">
+                    <span class="modal-title" id="modalTitle">Novo Registro</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formCadastro" class="row g-3" novalidate>
 
-                    <!-- ── FOTO DO EQUIPAMENTO ── -->
-                    <div class="col-12">
-                        <label class="form-label" id="foto-label">Foto do Equipamento</label>
-
-                        <div class="foto-upload-area" id="foto-upload-area"
-                             role="button"
-                             tabindex="0"
-                             aria-labelledby="foto-label"
-                             aria-describedby="foto-hint"
-                             onclick="document.getElementById('foto-input').click()"
-                             onkeydown="if(event.key==='Enter'||event.key===' ') document.getElementById('foto-input').click()"
-                             ondragover="event.preventDefault(); this.style.borderColor='#3b82f6';"
-                             ondragleave="this.style.borderColor='#93c5fd';"
-                             ondrop="handleFotoDrop(event)">
-                            <span class="upload-icon" aria-hidden="true">📷</span>
-                            <span class="upload-label">Clique ou arraste uma imagem aqui</span>
-                            <span class="upload-hint" id="foto-hint">JPG, PNG, WEBP, GIF · Máximo 5 MB</span>
-                        </div>
-                        <input type="file" id="foto-input" accept="image/*" style="display:none"
-                               aria-label="Selecionar foto do equipamento"
-                               onchange="carregarFoto(this)">
-
-                        <div id="foto-preview-container" style="display:none; margin-top:12px; position:relative; text-align:center;">
-                            <img id="foto-preview-img" src="" alt="Pré-visualização da foto do equipamento" class="foto-preview-img">
-                            <button type="button" class="foto-remove-btn" onclick="removerFoto()"
-                                    aria-label="Remover foto selecionada">✕</button>
-                            <div class="foto-info-nome" id="foto-info-nome" aria-live="polite"></div>
-                        </div>
-                        <input type="hidden" id="foto_base64">
-                        <input type="hidden" id="foto_url">
-                        <input type="hidden" id="foto_filename">
+                        <!-- Campos ocultos -->
+                        <input type="hidden" id="edit-id">
                         <input type="hidden" id="foto_url_antiga">
-                        <input type="hidden" id="foto_url_atual">
-                        <input type="hidden" id="foto-filename">
-                    </div>
 
-                    <div class="modal-footer px-0 pb-0">
-                        <button type="button" class="btn-modal-cancel" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn-modal-save" id="btnSalvar">Salvar no Banco</button>
-                    </div>
-                </form>
+                        <!-- Identificação -->
+                        <div class="col-md-4">
+                            <label class="form-label" for="identificacao">Identificação</label>
+                            <input type="text" class="form-control" id="identificacao" placeholder="P1-XX" required
+                                aria-required="true">
+                        </div>
+
+                        <!-- Usuário -->
+                        <div class="col-md-8">
+                            <label class="form-label" for="usuario">Usuário / Graduação</label>
+                            <input type="text" class="form-control" id="usuario" placeholder="SGT PM FULANO" required
+                                aria-required="true" oninput="this.value = this.value.toUpperCase()">
+                        </div>
+
+                        <!-- Monitor -->
+                        <div class="col-md-6">
+                            <label class="form-label" for="monitor_info">Monitor e Tombamento</label>
+                            <textarea class="form-control" id="monitor_info" rows="2"
+                                oninput="this.value = this.value.toUpperCase()"></textarea>
+                        </div>
+
+                        <!-- IP -->
+                        <div class="col-md-6">
+                            <label class="form-label" for="ip_maquina">Endereço IP</label>
+                            <input type="text" class="form-control" id="ip_maquina" placeholder="10.15.X.X"
+                                inputmode="decimal" autocomplete="off">
+                        </div>
+
+                        <!-- Situação -->
+                        <div class="col-md-4">
+                            <label class="form-label" for="situacao">Situação</label>
+                            <select class="form-select" id="situacao" aria-label="Situação do equipamento">
+                                <option value="OTIMO">ÓTIMO</option>
+                                <option value="BOM">BOM</option>
+                                <option value="MANUTENÇÃO">MANUTENÇÃO</option>
+                            </select>
+                        </div>
+
+                        <!-- Observações -->
+                        <div class="col-12">
+                            <label class="form-label" for="observacoes">Observações Técnicas</label>
+                            <textarea class="form-control" id="observacoes" rows="2"
+                                oninput="this.value = this.value.toUpperCase()"></textarea>
+                        </div>
+
+                        <!-- ── Galeria de fotos ───────────────────────────────── -->
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">
+                                📸 Fotos do Equipamento
+                                <small id="fotos-contador" class="text-muted ms-2">0 / 5 foto(s)</small>
+                            </label>
+
+                            <!-- Grid de miniaturas (preenchido pelo renderer.js) -->
+                            <div id="fotos-galeria-grid" class="fotos-galeria-grid"></div>
+
+                            <!-- Botão adicionar foto -->
+                            <label id="btn-adicionar-foto" class="foto-add-btn mt-2" title="Adicionar foto(s)">
+                                <input type="file" accept="image/*" multiple onchange="adicionarFotos(this)"
+                                    style="display:none;">
+                                <span style="font-size:1.4rem;">＋</span>
+                                <span style="font-size:0.75rem;">Adicionar foto</span>
+                            </label>
+
+                            <small class="text-muted d-block mt-1">
+                                Máximo de 5 fotos · até 5 MB cada · JPG, PNG, WEBP<br>
+                                A <strong>primeira foto</strong> será usada como capa na tabela.
+                            </small>
+                        </div>
+                        <!-- ─────────────────────────────────────────────────── -->
+
+                        <div class="modal-footer px-0 pb-0">
+                            <button type="button" class="btn-modal-cancel" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn-modal-save" id="btnSalvar">Salvar no Banco</button>
+                        </div>
+
+                    </form>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="script.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="script.js"></script>
 </body>
+
 </html>

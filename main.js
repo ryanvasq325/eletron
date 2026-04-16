@@ -63,7 +63,7 @@ const createWindow = () => {
         minWidth: 900,
         minHeight: 600,
         title: `Inventário TI · 4º BPM v${app.getVersion()}`,
-        icon: path.join(__dirname, 'build', 'icon.ico'), // ← adicione esta linha
+        icon: path.join(__dirname, 'build', 'icon.ico'),
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             contextIsolation: true,
@@ -96,6 +96,14 @@ function resolverTabelaPorIdentificacao(identificacao) {
     return 'inventario_ti';
 }
 
+// Retorna a chave curta usada na tabela inventario_fotos
+function resolverChaveTabela(identificacao) {
+    const up = (identificacao || '').toUpperCase();
+    if (up.startsWith('1CIA')) return '1cia';
+    if (up.startsWith('2CIA')) return '2cia';
+    return 'pcs';
+}
+
 // ============================================================
 // BUSCAR TODOS — sem foto (lazy load)
 // ============================================================
@@ -120,7 +128,7 @@ ipcMain.handle('buscar-computadores', async () => {
 });
 
 // ============================================================
-// BUSCAR FOTO — CORRIGIDO: retorna foto_url (não mais foto_base64)
+// BUSCAR FOTO — retorna foto_url principal
 // ============================================================
 ipcMain.handle('buscar-foto', async (event, { id, identificacao }) => {
     try {
@@ -140,7 +148,7 @@ ipcMain.handle('buscar-foto', async (event, { id, identificacao }) => {
 });
 
 // ============================================================
-// BUSCAR POR SETOR — filtros diretos (sem views)
+// BUSCAR POR SETOR
 // ============================================================
 ipcMain.handle('buscar-por-setor', async (event, setor) => {
     try {
@@ -206,7 +214,7 @@ ipcMain.handle('buscar-por-cidade', async (event, prefixo) => {
 });
 
 // ============================================================
-// SALVAR — CORRIGIDO: removido foto_base64, apenas foto_url
+// SALVAR — upsert com foto_url (capa)
 // ============================================================
 ipcMain.handle('salvar-computador', async (event, dados) => {
     try {
@@ -251,11 +259,12 @@ ipcMain.handle('salvar-computador', async (event, dados) => {
 });
 
 // ============================================================
-// EXCLUIR — deleta foto do Storage junto com o registro
+// EXCLUIR — deleta fotos extras + foto capa do Storage
 // ============================================================
 ipcMain.handle('excluir-computador', async (event, { id, identificacao }) => {
     try {
         const tabela = resolverTabelaPorIdentificacao(identificacao);
+        const chaveTabela = resolverChaveTabela(identificacao);
 
         const { data: existe } = await db.supabase
             .from(tabela)
@@ -265,12 +274,36 @@ ipcMain.handle('excluir-computador', async (event, { id, identificacao }) => {
 
         if (!existe) throw new Error(`Registro não encontrado na tabela ${tabela}.`);
 
+        // Deletar fotos extras da tabela inventario_fotos
+        try {
+            const { data: fotosExtras } = await db.supabase
+                .from('inventario_fotos')
+                .select('id, foto_url')
+                .eq('tabela', chaveTabela)
+                .eq('registro_id', id);
+
+            if (fotosExtras && fotosExtras.length > 0) {
+                const nomes = fotosExtras.map(f => f.foto_url.split('/').pop()).filter(Boolean);
+                if (nomes.length > 0) {
+                    await db.supabase.storage.from('ti-inventario-fotos').remove(nomes);
+                }
+                await db.supabase
+                    .from('inventario_fotos')
+                    .delete()
+                    .eq('tabela', chaveTabela)
+                    .eq('registro_id', id);
+            }
+        } catch (err) {
+            log.warn('Erro ao deletar fotos extras:', err.message);
+        }
+
+        // Deletar foto capa do Storage
         if (existe.foto_url) {
             try {
                 const caminhoArquivo = existe.foto_url.split('/').pop();
                 await db.supabase.storage.from('ti-inventario-fotos').remove([caminhoArquivo]);
             } catch (err) {
-                log.warn('Erro ao deletar foto do Storage:', err.message);
+                log.warn('Erro ao deletar foto capa do Storage:', err.message);
             }
         }
 
@@ -289,7 +322,6 @@ ipcMain.handle('excluir-computador', async (event, { id, identificacao }) => {
 
 // ============================================================
 // UPLOAD FOTO PARA STORAGE
-// CORRIGIDO: sanitização do identificacao no nome do arquivo
 // ============================================================
 ipcMain.handle('carregar-foto-storage', async (event, { base64, nomeOriginal, identificacao }) => {
     try {
@@ -309,7 +341,6 @@ ipcMain.handle('carregar-foto-storage', async (event, { base64, nomeOriginal, id
         const uuid = crypto.randomBytes(6).toString('hex');
         const extensao = tipoImagem.split('/')[1];
 
-        // CORRIGIDO: sanitizar identificacao — remove caracteres inválidos no path do Storage
         const idSanitizado = (identificacao || 'equip')
             .replace(/[^a-zA-Z0-9\-_]/g, '_')
             .substring(0, 30);
@@ -357,6 +388,92 @@ ipcMain.handle('deletar-foto-storage', async (event, { caminho }) => {
     } catch (err) {
         log.warn('Erro ao deletar foto do Storage:', err.message);
         return { success: true };
+    }
+});
+
+// ============================================================
+// MÚLTIPLAS FOTOS — buscar fotos extras de um registro
+// ============================================================
+ipcMain.handle('buscar-fotos-registro', async (event, { tabela, registro_id }) => {
+    try {
+        const { data, error } = await db.supabase
+            .from('inventario_fotos')
+            .select('id, foto_url, ordem')
+            .eq('tabela', tabela)
+            .eq('registro_id', registro_id)
+            .order('ordem', { ascending: true });
+
+        if (error) throw error;
+        return { fotos: data || [] };
+    } catch (err) {
+        log.error('Erro ao buscar fotos extras:', err.message);
+        return { fotos: [] };
+    }
+});
+
+// ============================================================
+// MÚLTIPLAS FOTOS — inserir foto extra
+// ============================================================
+ipcMain.handle('inserir-foto-registro', async (event, { tabela, registro_id, foto_url, ordem }) => {
+    try {
+        const { error } = await db.supabase
+            .from('inventario_fotos')
+            .insert({ tabela, registro_id, foto_url, ordem: ordem || 0 });
+
+        if (error) throw error;
+        return { success: true };
+    } catch (err) {
+        log.error('Erro ao inserir foto extra:', err.message);
+        return { success: false, error: err.message };
+    }
+});
+
+// ============================================================
+// MÚLTIPLAS FOTOS — deletar foto extra (Storage + tabela)
+// ============================================================
+ipcMain.handle('deletar-foto-registro', async (event, { foto_id, foto_url }) => {
+    try {
+        // Remove do Storage
+        if (foto_url) {
+            const nomeArquivo = foto_url.split('/').pop();
+            if (nomeArquivo) {
+                await db.supabase.storage
+                    .from('ti-inventario-fotos')
+                    .remove([nomeArquivo]);
+            }
+        }
+
+        // Remove da tabela inventario_fotos
+        const { error } = await db.supabase
+            .from('inventario_fotos')
+            .delete()
+            .eq('id', foto_id);
+
+        if (error) throw error;
+        return { success: true };
+    } catch (err) {
+        log.error('Erro ao deletar foto extra:', err.message);
+        return { success: false, error: err.message };
+    }
+});
+
+// ============================================================
+// MÚLTIPLAS FOTOS — reordenar fotos de um registro
+// ============================================================
+ipcMain.handle('reordenar-fotos-registro', async (event, { fotos }) => {
+    // fotos: [{ id, ordem }]
+    try {
+        const updates = fotos.map(({ id, ordem }) =>
+            db.supabase
+                .from('inventario_fotos')
+                .update({ ordem })
+                .eq('id', id)
+        );
+        await Promise.all(updates);
+        return { success: true };
+    } catch (err) {
+        log.error('Erro ao reordenar fotos:', err.message);
+        return { success: false, error: err.message };
     }
 });
 

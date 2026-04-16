@@ -1,25 +1,21 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('api', {
+    // ── Computadores ─────────────────────────────────────────
+    getComputadores:        ()     => ipcRenderer.invoke('buscar-computadores'),
+    getComputadoresPorSetor:(s)    => ipcRenderer.invoke('buscar-por-setor', s),
+    getComputadoresPorCidade:(p)   => ipcRenderer.invoke('buscar-por-cidade', p),
+    salvarComputador:       (d)    => ipcRenderer.invoke('salvar-computador', d),
+    excluirComputador:      (d)    => ipcRenderer.invoke('excluir-computador', d),
 
-    getComputadores: () => ipcRenderer.invoke('buscar-computadores'),
+    // ── Foto principal (Storage) ──────────────────────────────
+    buscarFoto:             (d)    => ipcRenderer.invoke('buscar-foto', d),
+    carregarFotoStorage:    (d)    => ipcRenderer.invoke('carregar-foto-storage', d),
+    deletarFotoStorage:     (d)    => ipcRenderer.invoke('deletar-foto-storage', d),
 
-    salvarComputador: (dados) => ipcRenderer.invoke('salvar-computador', dados),
-
-    // CORRIGIDO: antes passava (id) => ..., agora passa o objeto { id, identificacao } corretamente
-    excluirComputador: (dados) => ipcRenderer.invoke('excluir-computador', dados),
-
-    // NOVO: carrega foto de um registro individualmente (lazy load)
-    buscarFoto: (dados) => ipcRenderer.invoke('buscar-foto', dados),
-
-    // NOVO: upload de foto para Supabase Storage
-    carregarFotoStorage: (dados) => ipcRenderer.invoke('carregar-foto-storage', dados),
-
-    // NOVO: delete de foto do Supabase Storage
-    deletarFotoStorage: (dados) => ipcRenderer.invoke('deletar-foto-storage', dados),
-
-    getComputadoresPorSetor: (setor) => ipcRenderer.invoke('buscar-por-setor', setor),
-
-    getComputadoresPorCidade: (prefixo) => ipcRenderer.invoke('buscar-por-cidade', prefixo)
-
+    // ── Múltiplas fotos (inventario_fotos) ───────────────────
+    buscarFotosRegistro:    (d)    => ipcRenderer.invoke('buscar-fotos-registro', d),
+    inserirFotoRegistro:    (d)    => ipcRenderer.invoke('inserir-foto-registro', d),
+    deletarFotoRegistro:    (d)    => ipcRenderer.invoke('deletar-foto-registro', d),
+    reordenarFotosRegistro: (d)    => ipcRenderer.invoke('reordenar-fotos-registro', d),
 });
