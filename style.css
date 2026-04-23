@@ -1095,7 +1095,225 @@ html, body {
 .pvw-assinatura .linha { border-top: 1px solid #334155; width: 150px; margin: 28px auto 4px; }
 .pvw-assinatura p { margin: 0; font-size: 0.6rem; font-weight: 700; color: #1e293b; }
 .pvw-assinatura small { font-size: 0.54rem; color: #64748b; display: block; margin-top: 1px; }
+/* ══════════════════════════════════════════════
+   MODAL RELATÓRIO RESUMO — substitua o bloco anterior
+   Cole antes do @media print no style.css
+══════════════════════════════════════════════ */
 
+/* ── Override do modal para tema claro ── */
+#modalResumo .modal-content {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #1e293b !important;
+}
+
+#modalResumo .modal-header {
+    background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%) !important;
+    border-bottom: none !important;
+    padding: 14px 20px !important;
+    border-radius: 14px 14px 0 0 !important;
+}
+
+#modalResumo .modal-header .modal-title {
+    color: #ffffff !important;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+#modalResumo .modal-header .btn-close {
+    filter: invert(1) !important;
+    opacity: 0.8;
+}
+
+#modalResumo .modal-body {
+    background: #ffffff !important;
+    padding: 1.4rem !important;
+    color: #1e293b !important;
+}
+
+/* ── Título de seção ── */
+.resumo-barra-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #64748b;
+    margin-bottom: 10px;
+    margin-top: 18px;
+    border-left: 3px solid #1d4ed8;
+    padding-left: 8px;
+}
+
+/* ── Cards de situação ── */
+.resumo-grid {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+}
+
+.resumo-card {
+    flex: 1;
+    min-width: 90px;
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 14px 10px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.resumo-card .rc-num {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1;
+    color: #1e293b;
+}
+
+.resumo-card .rc-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #64748b;
+}
+
+.resumo-card.otimo  { border-color: #22c55e; background: #f0fdf4; }
+.resumo-card.otimo  .rc-num { color: #16a34a; }
+.resumo-card.bom    { border-color: #f59e0b; background: #fffbeb; }
+.resumo-card.bom    .rc-num { color: #d97706; }
+.resumo-card.ruim   { border-color: #ef4444; background: #fef2f2; }
+.resumo-card.ruim   .rc-num { color: #dc2626; }
+.resumo-card.ultra  { border-color: #a855f7; background: #faf5ff; }
+.resumo-card.ultra  .rc-num { color: #9333ea; }
+.resumo-card.total  { border-color: #3b82f6; background: #eff6ff; }
+.resumo-card.total  .rc-num { color: #1d4ed8; }
+
+/* ── Barra de distribuição ── */
+.resumo-barra-wrap { margin-bottom: 6px; }
+
+.resumo-barra {
+    height: 20px;
+    background: #f1f5f9;
+    border-radius: 99px;
+    overflow: hidden;
+    display: flex;
+    margin-bottom: 10px;
+    border: 1px solid #e2e8f0;
+}
+
+.resumo-barra-seg {
+    height: 100%;
+    transition: width 0.4s ease;
+}
+
+/* ── Legenda ── */
+.resumo-legenda {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+}
+
+.resumo-legenda-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    color: #475569;
+    font-weight: 600;
+}
+
+.resumo-legenda-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+/* ── Tabela por setor ── */
+.resumo-setor-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    margin-top: 4px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+
+.resumo-setor-table thead th {
+    padding: 9px 12px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #ffffff;
+    background: #1e3a8a;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.resumo-setor-table tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+    transition: background 0.12s;
+}
+
+.resumo-setor-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.resumo-setor-table tbody td {
+    padding: 9px 12px;
+    color: #1e293b;
+    vertical-align: middle;
+}
+
+.rst-badge {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 3px 10px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+/* ── Badges ultra ── */
+.badge-ultra,
+.rpt-badge-ultra,
+.pvw-badge-ultra {
+    background: #faf5ff;
+    color: #7e22ce;
+    border: 1px solid #d8b4fe;
+}
+
+.rpt-badge-ultra,
+.pvw-badge-ultra {
+    border: none;
+    border-radius: 3px;
+    padding: 1px 6px;
+    font-size: 0.7rem;
+}
+
+/* ── Botão Relatório Resumo ── */
+.btn-action.resumo {
+    background: linear-gradient(135deg, #0e7490, #155e75);
+    box-shadow: 0 2px 10px rgba(14, 116, 144, 0.35);
+}
+
+.btn-action.resumo:hover {
+    filter: brightness(1.15);
+}
 /* MEDIA PRINT OVERRIDE */
 @media print {
     @page { size: landscape; margin: 1.2cm 1cm; }

@@ -2,7 +2,6 @@ let listaAtualComputadores = [];
 let setorAtivoParaDica = 'NTI';
 
 // ── Estado da galeria de fotos no modal ──────────────────────
-// Cada item: { tipo: 'existente'|'nova', foto_id, url, base64, nomeArquivo, marcadaParaRemover }
 let fotosModal = [];
 const MAX_FOTOS = 5;
 
@@ -16,10 +15,12 @@ const configuracaoSetores = {
     '1CIA-P3': { id: '1CIA-P3-' }, '1CIA-P4': { id: '1CIA-P4-' },
     '1CIA-P5': { id: '1CIA-P5-' }, '1CIA-P6': { id: '1CIA-P6-' },
     '1CIA-NTI': { id: '1CIA-NTI-' },
+    '1CIA-SUBCMD': { id: '1CIA-SUB-' }, '1CIA-CMD': { id: '1CIA-CMD-' },
     '2CIA-P1': { id: '2CIA-P1-' }, '2CIA-P2': { id: '2CIA-P2-' },
     '2CIA-P3': { id: '2CIA-P3-' }, '2CIA-P4': { id: '2CIA-P4-' },
     '2CIA-P5': { id: '2CIA-P5-' }, '2CIA-P6': { id: '2CIA-P6-' },
     '2CIA-NTI': { id: '2CIA-NTI-' },
+    '2CIA-SUBCMD': { id: '2CIA-SUB-' }, '2CIA-CMD': { id: '2CIA-CMD-' },
     'PIMENTA BUENO': { id: 'PB-' }, 'PB':   { id: 'PB-' },
     'ESPIGÃO':       { id: 'ESP-' }, 'ESP':  { id: 'ESP-' },
     'ANDREAZZA':     { id: 'AND-' }, 'AND':  { id: 'AND-' },
@@ -65,13 +66,9 @@ window.onload = async () => {
 };
 
 // ══════════════════════════════════════════════════════════════
-// GALERIA DE FOTOS — lógica completa
+// GALERIA DE FOTOS
 // ══════════════════════════════════════════════════════════════
 
-/**
- * Adiciona fotos selecionadas pelo <input type="file"> ao estado fotosModal.
- * Chamado pelo input do modal (HTML: onchange="adicionarFotos(this)")
- */
 function adicionarFotos(input) {
     const arquivos = Array.from(input.files);
     const ativas   = fotosModal.filter(f => !f.marcadaParaRemover).length;
@@ -105,18 +102,12 @@ function adicionarFotos(input) {
     input.value = '';
 }
 
-/**
- * Marca uma foto para remoção (não deleta imediatamente — só ao salvar).
- */
 function marcarFotoParaRemover(idx) {
     if (!fotosModal[idx]) return;
     fotosModal[idx].marcadaParaRemover = true;
     renderizarGaleria();
 }
 
-/**
- * Renderiza o grid de fotos dentro do modal.
- */
 function renderizarGaleria() {
     const container = document.getElementById('fotos-galeria-grid');
     const contador  = document.getElementById('fotos-contador');
@@ -131,9 +122,9 @@ function renderizarGaleria() {
 
     fotosModal.forEach((foto, idx) => {
         if (foto.marcadaParaRemover) return;
-        const src   = foto.url || foto.base64 || '';
+        const src    = foto.url || foto.base64 || '';
         const isCapa = fotosModal.filter(f => !f.marcadaParaRemover).indexOf(foto) === 0;
-        const div   = document.createElement('div');
+        const div    = document.createElement('div');
         div.className = 'foto-thumb-wrap';
         div.innerHTML = `
             <img
@@ -152,28 +143,22 @@ function renderizarGaleria() {
     });
 }
 
-/**
- * Carrega as fotos de um registro existente para o modal (edição).
- * Busca a foto principal (foto_url da tabela) + fotos extras (inventario_fotos).
- */
 async function carregarFotosModal(item) {
     fotosModal = [];
 
-    // 1. Foto de capa (coluna foto_url na tabela principal)
     const capaSrc = item.foto_url || null;
     if (capaSrc) {
         fotosModal.push({
             tipo: 'existente',
-            foto_id: null,       // é a foto_url da tabela principal, não tem id em inventario_fotos
+            foto_id: null,
             url: capaSrc,
             base64: null,
             nomeArquivo: null,
             marcadaParaRemover: false,
-            eCapa: true          // flag para identificar no save
+            eCapa: true
         });
     }
 
-    // 2. Fotos extras (tabela inventario_fotos)
     try {
         const chaveTabela = getTabelaPorIdentificacao(item.identificacao);
         const res = await window.api.buscarFotosRegistro({ tabela: chaveTabela, registro_id: item.id });
@@ -195,30 +180,17 @@ async function carregarFotosModal(item) {
     renderizarGaleria();
 }
 
-/**
- * Processa uploads e remoções ao salvar o formulário.
- * Retorna a URL da foto de capa (primeira foto ativa).
- */
 async function processarFotosAoSalvar(computador_id, identificacao, fotoUrlAntiga) {
     const chaveTabela = getTabelaPorIdentificacao(identificacao);
 
-    // ── Remover fotos marcadas ────────────────────────────────
     for (const foto of fotosModal) {
         if (!foto.marcadaParaRemover) continue;
-
-        if (foto.eCapa) {
-            // A foto capa será sobrescrita/removida pelo salvar-computador
-            // Não precisamos deletar manualmente aqui — main.js já trata isso
-            continue;
-        }
-
+        if (foto.eCapa) continue;
         if (foto.foto_id) {
-            // Foto extra: deleta do Storage + inventario_fotos
             await window.api.deletarFotoRegistro({ foto_id: foto.foto_id, foto_url: foto.url });
         }
     }
 
-    // ── Upload das fotos novas ────────────────────────────────
     let ordemExtra = 0;
     for (let i = 0; i < fotosModal.length; i++) {
         const foto = fotosModal[i];
@@ -238,8 +210,6 @@ async function processarFotosAoSalvar(computador_id, identificacao, fotoUrlAntig
         foto.url  = uploadRes.url;
         foto.tipo = 'existente';
 
-        // A 1ª foto nova que ocupa a posição de capa NÃO vai para inventario_fotos
-        // (será salva como foto_url na tabela principal via salvar-computador)
         const isCapaNova = fotosModal.filter(f => !f.marcadaParaRemover)[0] === foto;
         if (!isCapaNova && computador_id) {
             await window.api.inserirFotoRegistro({
@@ -251,7 +221,6 @@ async function processarFotosAoSalvar(computador_id, identificacao, fotoUrlAntig
         }
     }
 
-    // ── Retorna URL da foto de capa (primeira ativa) ──────────
     const primeiraAtiva = fotosModal.find(f => !f.marcadaParaRemover);
     return primeiraAtiva?.url || null;
 }
@@ -283,7 +252,7 @@ function marcarAtivo(elemento) {
         elemento.classList.add('active');
         const btnNovo = document.getElementById('btnNovoRegistro');
         const texto = elemento.innerText.toUpperCase();
-        if (btnNovo) btnNovo.style.display = (texto.includes("VER TODOS") || texto.includes("MANUTENÇÃO")) ? 'none' : 'inline-block';
+        if (btnNovo) btnNovo.style.display = (texto.includes("VER TODOS") || texto.includes("RELATÓRIO")) ? 'none' : 'inline-block';
     }
 }
 
@@ -292,7 +261,6 @@ async function atualizarVisualizacao() {
     if (btnAtivo) {
         const texto = btnAtivo.innerText.toUpperCase();
         if (texto.includes("VER TODOS") || texto.includes("⊞")) await renderizarTabela(btnAtivo);
-        else if (texto.includes("MANUTENÇÃO") || texto.includes("🛠")) await filtrarManutencao(btnAtivo);
         else await filtrarPorSetor(setorAtivoParaDica, btnAtivo);
     } else await renderizarTabela();
 }
@@ -318,20 +286,6 @@ async function filtrarPorSetor(prefixo, btn) {
         listaAtualComputadores = filtrados || [];
         desenharLinhas(listaAtualComputadores);
     } catch (error) { console.error("Erro no filtro:", error); }
-}
-
-async function filtrarManutencao(btn) {
-    marcarAtivo(btn);
-    document.getElementById('titulo-sessao').innerText = "Equipamentos em Manutenção";
-    try {
-        const [r1, r2, r3] = await Promise.all([
-            window.api.getComputadoresPorSetor('manutencao'),
-            window.api.getComputadoresPorSetor('1ciamanutencao'),
-            window.api.getComputadoresPorSetor('2ciamanutencao'),
-        ]);
-        listaAtualComputadores = [...(r1||[]),...(r2||[]),...(r3||[])];
-        desenharLinhas(listaAtualComputadores);
-    } catch (e) { console.error(e); }
 }
 
 async function filtrarPorCidade(prefixo, nome, btn) {
@@ -361,7 +315,7 @@ function normalizarBase64(raw) {
     let b = String(raw).trim();
     if (!b || b === 'null' || b.length < 100) return null;
     if (!b.startsWith('data:')) {
-        if (b.startsWith('/9j/'))    b = 'data:image/jpeg;base64,' + b;
+        if (b.startsWith('/9j/'))     b = 'data:image/jpeg;base64,' + b;
         else if (b.startsWith('iVBORw')) b = 'data:image/png;base64,'  + b;
         else if (b.startsWith('R0lG'))   b = 'data:image/gif;base64,'  + b;
         else if (b.startsWith('UklGR')) b = 'data:image/webp;base64,' + b;
@@ -373,6 +327,27 @@ function normalizarBase64(raw) {
 function obterFotoSrc(item) {
     if (item.foto_url) return item.foto_url;
     return normalizarBase64(item.foto_base64);
+}
+
+// ── BADGE DE SITUAÇÃO ────────────────────────────
+function getBadgeClass(situacao) {
+    switch ((situacao || '').toUpperCase()) {
+        case 'OTIMO':        return 'badge-otimo';
+        case 'BOM':          return 'badge-bom';
+        case 'RUIM':         return 'badge-manut';   // vermelho (reutiliza classe)
+        case 'ULTRAPASSADO': return 'badge-ultra';
+        default:             return 'badge-manut';
+    }
+}
+
+function getSituacaoLabel(situacao) {
+    switch ((situacao || '').toUpperCase()) {
+        case 'OTIMO':        return 'Ótimo';
+        case 'BOM':          return 'Bom';
+        case 'RUIM':         return 'Ruim';
+        case 'ULTRAPASSADO': return 'Ultrapassado';
+        default:             return situacao || '—';
+    }
 }
 
 // ── DESENHAR TABELA ──────────────────────────────
@@ -388,11 +363,11 @@ function desenharLinhas(dados) {
     const fragment = document.createDocumentFragment();
 
     dados.forEach((item, index) => {
-        const badgeClass = item.situacao === 'OTIMO' ? 'badge-otimo' : item.situacao === 'BOM' ? 'badge-bom' : 'badge-manut';
+        const badgeClass = getBadgeClass(item.situacao);
+        const sitLabel   = getSituacaoLabel(item.situacao);
         const rowClass   = getRowClass(item.identificacao);
         const fotoSrc    = obterFotoSrc(item);
 
-        // Thumb da tabela: mostra apenas a foto de capa (foto_url)
         let thumbHTML = `<span class="thumb-none" title="Sem foto" aria-label="Sem foto">📷</span>`;
         if (fotoSrc) {
             thumbHTML = `<img
@@ -416,7 +391,7 @@ function desenharLinhas(dados) {
             <td>${esc(item.usuario)}</td>
             <td class="monitor-cell">${esc(item.monitor_info)}</td>
             <td class="ip-cell">${esc(item.ip_maquina)}</td>
-            <td style="text-align:center;"><span class="badge-status ${badgeClass} badge-input">${esc(item.situacao)}</span></td>
+            <td style="text-align:center;"><span class="badge-status ${badgeClass} badge-input">${sitLabel}</span></td>
             <td class="obs-cell">${esc(item.observacoes)}</td>
             <td class="no-print" style="text-align:center;white-space:nowrap;">
                 <button class="btn-tbl edit" onclick="prepararEdicao(${item.id})" title="Editar" aria-label="Editar ${esc(item.usuario)}">✏️</button>
@@ -490,9 +465,7 @@ async function prepararEdicao(id) {
     document.getElementById('btnSalvar').className     = 'btn-modal-save edit-mode';
     document.getElementById('btnSalvar').innerText     = 'Atualizar Registro';
 
-    // Carrega galeria de fotos (capa + extras)
     await carregarFotosModal(item);
-
     abrirModal();
 }
 
@@ -518,9 +491,6 @@ document.getElementById('formCadastro').addEventListener('submit', async (e) => 
     const identificacao = document.getElementById('identificacao').value;
     const fotoUrlAntiga = document.getElementById('foto_url_antiga').value || null;
 
-    // Processa upload/remoção de fotos e obtém URL da capa
-    // Para registros NOVOS, computador_id ainda não existe — passamos null
-    // As fotos extras serão inseridas após o upsert retornar o id
     const novaCapaUrl = await processarFotosAoSalvar(
         isEdicao ? Number(editId) : null,
         identificacao,
@@ -542,8 +512,6 @@ document.getElementById('formCadastro').addEventListener('submit', async (e) => 
     const res = await window.api.salvarComputador(dados);
 
     if (res.success) {
-        // Para registros NOVOS: precisamos inserir as fotos extras na tabela inventario_fotos
-        // Buscamos o id recém-criado pelo identificacao (abordagem simples)
         if (!isEdicao) {
             try {
                 const todosRegistros = await window.api.getComputadores();
@@ -554,7 +522,6 @@ document.getElementById('formCadastro').addEventListener('submit', async (e) => 
                 if (novoItem) {
                     const chaveTabela = getTabelaPorIdentificacao(identificacao);
                     let ordem = 0;
-                    // Pula a capa (índice 0 ativo), insere o restante como extras
                     const ativas = fotosModal.filter(f => !f.marcadaParaRemover);
                     for (let i = 1; i < ativas.length; i++) {
                         const foto = ativas[i];
@@ -576,7 +543,6 @@ document.getElementById('formCadastro').addEventListener('submit', async (e) => 
         fecharModalLimpo();
         toast(isEdicao ? 'Registro atualizado!' : 'Registro salvo!', 'sucesso');
 
-        // Atualiza cache em memória
         if (novaCapaUrl && editId) {
             const item = listaAtualComputadores.find(c => c.id == editId);
             if (item) item.foto_url = novaCapaUrl;
@@ -661,7 +627,7 @@ function getSetorLabel(idTexto) {
 function agruparPorCidadeCiaSetor() {
     const linhas = Array.from(document.getElementById('corpo-tabela').querySelectorAll('tr'));
     const mapa   = {};
-    const totais = { OTIMO: 0, BOM: 0, 'MANUTENÇÃO': 0 };
+    const totais = { OTIMO: 0, BOM: 0, RUIM: 0, ULTRAPASSADO: 0 };
 
     linhas.forEach(linha => {
         if (!linha.cells || linha.cells.length < 8) return;
@@ -670,11 +636,18 @@ function agruparPorCidadeCiaSetor() {
         const cidade = getCidade(id);
         const cia    = getCia(id);
         const setor  = getSetorLabel(id);
-        if (!mapa[cidade])           mapa[cidade] = {};
-        if (!mapa[cidade][cia])      mapa[cidade][cia] = {};
+        if (!mapa[cidade])             mapa[cidade] = {};
+        if (!mapa[cidade][cia])        mapa[cidade][cia] = {};
         if (!mapa[cidade][cia][setor]) mapa[cidade][cia][setor] = [];
         mapa[cidade][cia][setor].push(linha);
-        if (totais.hasOwnProperty(sit)) totais[sit]++;
+
+        // Normaliza situação para chave correta
+        const sitKey = sit === 'ÓTIMO' || sit === 'OTIMO' ? 'OTIMO'
+                     : sit === 'BOM'         ? 'BOM'
+                     : sit === 'RUIM'        ? 'RUIM'
+                     : sit === 'ULTRAPASSADO'? 'ULTRAPASSADO'
+                     : null;
+        if (sitKey) totais[sitKey]++;
     });
     return { mapa, totais };
 }
@@ -690,6 +663,85 @@ function construirFotoMap(linhas) {
     return fotoMap;
 }
 
+// ══════════════════════════════════════════════════════════════
+// MODAL RELATÓRIO RESUMO
+// ══════════════════════════════════════════════════════════════
+function abrirModalResumo() {
+    const registros = listaAtualComputadores;
+
+    const situacoes = {
+        OTIMO:        { label: 'Ótimo',        cor: '#22c55e', classe: 'otimo' },
+        BOM:          { label: 'Bom',          cor: '#f59e0b', classe: 'bom'   },
+        RUIM:         { label: 'Ruim',         cor: '#ef4444', classe: 'ruim'  },
+        ULTRAPASSADO: { label: 'Ultrapassado', cor: '#a855f7', classe: 'ultra' },
+    };
+
+    const contagem = { OTIMO: 0, BOM: 0, RUIM: 0, ULTRAPASSADO: 0 };
+    const porSetor = {};
+
+    registros.forEach(r => {
+        const sit = (r.situacao || '').toUpperCase().trim();
+        const sitKey = sit === 'ÓTIMO' ? 'OTIMO' : sit;
+        if (contagem.hasOwnProperty(sitKey)) contagem[sitKey]++;
+
+        const setor = r.identificacao
+            ? r.identificacao.split('-').slice(0, -1).join('-') || r.identificacao
+            : '—';
+        if (!porSetor[setor]) porSetor[setor] = { OTIMO: 0, BOM: 0, RUIM: 0, ULTRAPASSADO: 0, total: 0 };
+        if (contagem.hasOwnProperty(sitKey)) porSetor[setor][sitKey]++;
+        porSetor[setor].total++;
+    });
+
+    const total = registros.length;
+
+    // Cards
+    document.getElementById('resumo-cards').innerHTML =
+        Object.entries(situacoes).map(([key, s]) => `
+            <div class="resumo-card ${s.classe}">
+                <div class="rc-num">${contagem[key]}</div>
+                <div class="rc-label">${s.label}</div>
+            </div>`).join('') +
+        `<div class="resumo-card total">
+            <div class="rc-num">${total}</div>
+            <div class="rc-label">Total</div>
+        </div>`;
+
+    // Barra
+    document.getElementById('resumo-barra').innerHTML = Object.entries(situacoes).map(([key, s]) => {
+        const pct = total > 0 ? ((contagem[key] / total) * 100).toFixed(1) : 0;
+        return `<div class="resumo-barra-seg" style="width:${pct}%;background:${s.cor};" title="${s.label}: ${contagem[key]} (${pct}%)"></div>`;
+    }).join('');
+
+    // Legenda
+    document.getElementById('resumo-legenda').innerHTML = Object.entries(situacoes).map(([key, s]) => {
+        const pct = total > 0 ? ((contagem[key] / total) * 100).toFixed(1) : 0;
+        return `<div class="resumo-legenda-item">
+            <div class="resumo-legenda-dot" style="background:${s.cor};"></div>
+            ${s.label}: <strong>${contagem[key]}</strong> (${pct}%)
+        </div>`;
+    }).join('');
+
+    // Tabela por setor
+    const tbody = document.getElementById('resumo-setor-tbody');
+    if (Object.keys(porSetor).length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#64748b;padding:18px;">Nenhum registro encontrado.</td></tr>`;
+    } else {
+        tbody.innerHTML = Object.entries(porSetor)
+            .sort((a, b) => b[1].total - a[1].total)
+            .map(([setor, c]) => `
+            <tr>
+                <td><strong>${setor}</strong></td>
+                <td style="text-align:center;">${c.OTIMO > 0 ? `<span class="rst-badge" style="background:#14532d;color:#22c55e;">${c.OTIMO}</span>` : '<span style="color:#334155;">—</span>'}</td>
+                <td style="text-align:center;">${c.BOM > 0 ? `<span class="rst-badge" style="background:#451a03;color:#f59e0b;">${c.BOM}</span>` : '<span style="color:#334155;">—</span>'}</td>
+                <td style="text-align:center;">${c.RUIM > 0 ? `<span class="rst-badge" style="background:#450a0a;color:#ef4444;">${c.RUIM}</span>` : '<span style="color:#334155;">—</span>'}</td>
+                <td style="text-align:center;">${c.ULTRAPASSADO > 0 ? `<span class="rst-badge" style="background:#3b0764;color:#a855f7;">${c.ULTRAPASSADO}</span>` : '<span style="color:#334155;">—</span>'}</td>
+                <td style="text-align:center;"><strong style="color:#60a5fa;">${c.total}</strong></td>
+            </tr>`).join('');
+    }
+
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('modalResumo')).show();
+}
+
 // ── PRÉ-VISUALIZAÇÃO ─────────────────────────────
 function abrirPreview() {
     const linhas = document.getElementById('corpo-tabela').querySelectorAll('tr');
@@ -700,14 +752,15 @@ function abrirPreview() {
     const titulo  = document.getElementById('titulo-sessao').innerText;
     const agora   = new Date().toLocaleString('pt-BR');
     const { mapa, totais } = agruparPorCidadeCiaSetor();
-    const total   = totais.OTIMO + totais.BOM + totais['MANUTENÇÃO'];
+    const total   = totais.OTIMO + totais.BOM + totais.RUIM + totais.ULTRAPASSADO;
     const fotoMap = construirFotoMap(Array.from(linhas));
 
-    document.getElementById('pvw-sub').innerText     = titulo;
-    document.getElementById('pvw-n-otimo').innerText = totais.OTIMO;
-    document.getElementById('pvw-n-bom').innerText   = totais.BOM;
-    document.getElementById('pvw-n-manut').innerText = totais['MANUTENÇÃO'];
-    document.getElementById('pvw-n-total').innerText = total;
+    document.getElementById('pvw-sub').innerText      = titulo;
+    document.getElementById('pvw-n-otimo').innerText  = totais.OTIMO;
+    document.getElementById('pvw-n-bom').innerText    = totais.BOM;
+    document.getElementById('pvw-n-ruim').innerText   = totais.RUIM;
+    document.getElementById('pvw-n-ultra').innerText  = totais.ULTRAPASSADO;
+    document.getElementById('pvw-n-total').innerText  = total;
 
     const ORDEM_CIDADES = ['Cacoal','Pimenta Bueno','Espigão','Andreazza','São Felipe','Primavera'];
     let zebraIdx = 0, corpoHTML = '';
@@ -741,8 +794,15 @@ function abrirPreview() {
                     const sit = (l.cells[6]?.innerText.trim() || '').toUpperCase();
                     const obs = esc(l.cells[7]?.innerText.trim());
                     const z   = zebraIdx++ % 2 !== 0 ? 'pvw-z' : '';
-                    const bdg = sit === 'OTIMO' ? 'pvw-badge-otimo' : sit === 'BOM' ? 'pvw-badge-bom' : 'pvw-badge-manut';
-                    const sl  = sit === 'OTIMO' ? 'Ótimo' : sit === 'BOM' ? 'Bom' : 'Manutenção';
+                    const bdg = sit === 'ÓTIMO' || sit === 'OTIMO' ? 'pvw-badge-otimo'
+                              : sit === 'BOM'          ? 'pvw-badge-bom'
+                              : sit === 'ULTRAPASSADO' ? 'pvw-badge-ultra'
+                              : 'pvw-badge-manut';
+                    const sl  = sit === 'ÓTIMO' || sit === 'OTIMO' ? 'Ótimo'
+                              : sit === 'BOM'          ? 'Bom'
+                              : sit === 'RUIM'         ? 'Ruim'
+                              : sit === 'ULTRAPASSADO' ? 'Ultrapassado'
+                              : sit;
                     const fotoCell = fotoSrc
                         ? `<td style="text-align:center;padding:2px;"><img src="${fotoSrc}" style="width:48px;height:48px;object-fit:cover;border-radius:4px;border:1px solid #cbd5e1;" alt="Foto ${id}"></td>`
                         : `<td style="text-align:center;color:#94a3b8;font-size:16px;">📷</td>`;
@@ -787,7 +847,8 @@ function abrirPreview() {
                 <div class="pvw-resumo-title">Resumo do Relatório</div>
                 <div class="pvw-resumo-row"><span>🟢 Ótimo</span><strong>${totais.OTIMO}</strong></div>
                 <div class="pvw-resumo-row"><span>🟡 Bom</span><strong>${totais.BOM}</strong></div>
-                <div class="pvw-resumo-row"><span>🔴 Manutenção</span><strong>${totais['MANUTENÇÃO']}</strong></div>
+                <div class="pvw-resumo-row"><span>🔴 Ruim</span><strong>${totais.RUIM}</strong></div>
+                <div class="pvw-resumo-row"><span>🟣 Ultrapassado</span><strong>${totais.ULTRAPASSADO}</strong></div>
                 <div class="pvw-resumo-row total"><span>Total Geral</span><strong>${total}</strong></div>
             </div>
         </div>
@@ -849,7 +910,7 @@ function prepararConteudoRelatorio() {
                 novoConteudo += `<tr><td colspan="7" class="rpt-setor-header" style="padding-left:24px!important;">▪ Setor: ${esc(setor)} · ${mapa[cidade][cia][setor].length} equipamento(s)</td></tr>`;
 
                 mapa[cidade][cia][setor].forEach(l => {
-                    const rowId  = l.dataset.id;
+                    const rowId   = l.dataset.id;
                     const fotoSrc = fotoMap[rowId] || null;
                     const zebraClass = zebraIdx++ % 2 !== 0 ? 'rpt-zebra' : '';
                     const id  = esc(l.cells[2]?.innerText.trim());
@@ -858,8 +919,15 @@ function prepararConteudoRelatorio() {
                     const ip  = esc(l.cells[5]?.innerText.trim());
                     const sit = (l.cells[6]?.innerText.trim() || '').toUpperCase();
                     const obs = esc(l.cells[7]?.innerText.trim());
-                    const bdg = sit === 'OTIMO' ? 'rpt-badge-otimo' : sit === 'BOM' ? 'rpt-badge-bom' : 'rpt-badge-manut';
-                    const sl  = sit === 'OTIMO' ? 'Ótimo' : sit === 'BOM' ? 'Bom' : 'Manutenção';
+                    const bdg = sit === 'ÓTIMO' || sit === 'OTIMO' ? 'rpt-badge-otimo'
+                              : sit === 'BOM'          ? 'rpt-badge-bom'
+                              : sit === 'ULTRAPASSADO' ? 'rpt-badge-ultra'
+                              : 'rpt-badge-manut';
+                    const sl  = sit === 'ÓTIMO' || sit === 'OTIMO' ? 'Ótimo'
+                              : sit === 'BOM'          ? 'Bom'
+                              : sit === 'RUIM'         ? 'Ruim'
+                              : sit === 'ULTRAPASSADO' ? 'Ultrapassado'
+                              : sit;
                     const fotoTd = fotoSrc
                         ? `<td style="text-align:center;padding:2px;width:50px;"><img src="${fotoSrc}" style="width:42px;height:42px;object-fit:cover;border-radius:3px;border:1px solid #cbd5e1;" alt="Foto"></td>`
                         : `<td style="text-align:center;width:50px;color:#cbd5e1;font-size:14px;">📷</td>`;
@@ -878,15 +946,16 @@ function prepararConteudoRelatorio() {
         });
     });
 
-    const totalGeral = totais['OTIMO'] + totais['BOM'] + totais['MANUTENÇÃO'];
+    const totalGeral = totais.OTIMO + totais.BOM + totais.RUIM + totais.ULTRAPASSADO;
     const resumoContainer = document.getElementById('rpt-resumo-container');
     if (resumoContainer) {
         resumoContainer.innerHTML = `
             <div class="rpt-resumo">
                 <div class="rpt-resumo-title">Resumo do Relatório</div>
-                <div class="rpt-resumo-row"><span>🟢 Ótimo</span><strong>${totais['OTIMO']}</strong></div>
-                <div class="rpt-resumo-row"><span>🟡 Bom</span><strong>${totais['BOM']}</strong></div>
-                <div class="rpt-resumo-row"><span>🔴 Manutenção</span><strong>${totais['MANUTENÇÃO']}</strong></div>
+                <div class="rpt-resumo-row"><span>🟢 Ótimo</span><strong>${totais.OTIMO}</strong></div>
+                <div class="rpt-resumo-row"><span>🟡 Bom</span><strong>${totais.BOM}</strong></div>
+                <div class="rpt-resumo-row"><span>🔴 Ruim</span><strong>${totais.RUIM}</strong></div>
+                <div class="rpt-resumo-row"><span>🟣 Ultrapassado</span><strong>${totais.ULTRAPASSADO}</strong></div>
                 <div class="rpt-resumo-row total"><span>Total Geral</span><strong>${totalGeral}</strong></div>
             </div>`;
     }
@@ -953,7 +1022,7 @@ async function salvarPDF() {
     esconder.forEach(el => el.setAttribute('data-pdf-hidden', el.style.display || ''));
     esconder.forEach(el => el.style.display = 'none');
 
-    const appBody    = document.querySelector('.app-body');
+    const appBody     = document.querySelector('.app-body');
     const paddingOrig = appBody.style.padding;
     appBody.style.padding = '0';
     loading.classList.add('ativo');

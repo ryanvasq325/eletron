@@ -156,27 +156,54 @@ ipcMain.handle('buscar-por-setor', async (event, setor) => {
         const { tabela } = resolverTabela(setorNorm);
         const campos = 'id, identificacao, usuario, monitor_info, ip_maquina, situacao, observacoes, foto_url';
 
+        // Monta o padrão ILIKE com base no setor normalizado
+        let padrao = null;
+
+        const prefixos = [
+            { test: '1ciap1',      like: '1CIA-P1%' },
+            { test: '1ciap2',      like: '1CIA-P2%' },
+            { test: '1ciap3',      like: '1CIA-P3%' },
+            { test: '1ciap4',      like: '1CIA-P4%' },
+            { test: '1ciap5',      like: '1CIA-P5%' },
+            { test: '1ciap6',      like: '1CIA-P6%' },
+            { test: '1cianti',     like: '1CIA-NTI%' },
+            { test: '1ciasubcmd',  like: '1CIA-SUB%' },
+            { test: '1ciacmd',     like: '1CIA-CMD%' },
+            { test: '2ciap1',      like: '2CIA-P1%' },
+            { test: '2ciap2',      like: '2CIA-P2%' },
+            { test: '2ciap3',      like: '2CIA-P3%' },
+            { test: '2ciap4',      like: '2CIA-P4%' },
+            { test: '2ciap5',      like: '2CIA-P5%' },
+            { test: '2ciap6',      like: '2CIA-P6%' },
+            { test: '2cianti',     like: '2CIA-NTI%' },
+            { test: '2ciasubcmd',  like: '2CIA-SUB%' },
+            { test: '2ciacmd',     like: '2CIA-CMD%' },
+            { test: 'p1',          like: 'P1%' },
+            { test: 'p2',          like: 'P2%' },
+            { test: 'p3',          like: 'P3%' },
+            { test: 'p4',          like: 'P4%' },
+            { test: 'p5',          like: 'P5%' },
+            { test: 'p6',          like: 'P6%' },
+            { test: 'subcmd',      like: 'SUB%' },
+            { test: 'cmd',         like: 'CMD%' },
+            { test: 'nti',         like: 'NTI%' },
+        ];
+
+        // Verifica da mais específica para a mais genérica
+        for (const { test, like } of prefixos) {
+            if (setorNorm === test || setorNorm.endsWith(test)) {
+                padrao = like;
+                break;
+            }
+        }
+
         let query = db.supabase
             .from(tabela)
             .select(campos)
             .order('identificacao', { ascending: true });
 
-        if (setor.toUpperCase().includes('MANUTENCAO')) {
-            query = query.eq('situacao', 'MANUTENÇÃO');
-        } else if (setorNorm.includes('p1')) {
-            query = query.ilike('identificacao', setorNorm.includes('1cia') ? '1CIA-P1%' : setorNorm.includes('2cia') ? '2CIA-P1%' : 'P1%');
-        } else if (setorNorm.includes('p2')) {
-            query = query.ilike('identificacao', setorNorm.includes('1cia') ? '1CIA-P2%' : setorNorm.includes('2cia') ? '2CIA-P2%' : 'P2%');
-        } else if (setorNorm.includes('p3')) {
-            query = query.ilike('identificacao', setorNorm.includes('1cia') ? '1CIA-P3%' : setorNorm.includes('2cia') ? '2CIA-P3%' : 'P3%');
-        } else if (setorNorm.includes('p4')) {
-            query = query.ilike('identificacao', setorNorm.includes('1cia') ? '1CIA-P4%' : setorNorm.includes('2cia') ? '2CIA-P4%' : 'P4%');
-        } else if (setorNorm.includes('p5')) {
-            query = query.ilike('identificacao', setorNorm.includes('1cia') ? '1CIA-P5%' : setorNorm.includes('2cia') ? '2CIA-P5%' : 'P5%');
-        } else if (setorNorm.includes('p6')) {
-            query = query.ilike('identificacao', setorNorm.includes('1cia') ? '1CIA-P6%' : setorNorm.includes('2cia') ? '2CIA-P6%' : 'P6%');
-        } else if (setorNorm.includes('nti')) {
-            query = query.ilike('identificacao', setorNorm.includes('1cia') ? '1CIA-NTI%' : setorNorm.includes('2cia') ? '2CIA-NTI%' : 'NTI%');
+        if (padrao) {
+            query = query.ilike('identificacao', padrao);
         }
 
         const { data, error } = await query;
@@ -187,7 +214,6 @@ ipcMain.handle('buscar-por-setor', async (event, setor) => {
         return [];
     }
 });
-
 // ============================================================
 // BUSCAR POR CIDADE
 // ============================================================
